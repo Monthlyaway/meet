@@ -1,0 +1,255 @@
+/* Gaming-focused authentication styles */
+/* Color Palette: Primary #7C3AED, Secondary #1F2937, Success #059669, Error #EF4444 */
+/* Typography: Inter font family, proper type scale */
+/* Spacing: 4px base unit scale */
+
+.authContainer {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.authCard {
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transition: all 150ms ease-out;
+}
+
+.authCard:hover {
+  border-color: #7C3AED;
+  box-shadow: 0 25px 30px -5px rgba(124, 58, 237, 0.1), 0 15px 15px -5px rgba(124, 58, 237, 0.05);
+}
+
+.authHeader {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.authTitle {
+  font-size: 2rem; /* H1: 2rem */
+  font-weight: 700;
+  color: #7C3AED;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.authSubtitle {
+  font-size: 1rem; /* Body: 1rem */
+  color: #9CA3AF;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.authForm {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formLabel {
+  font-size: 0.875rem; /* Small: 0.875rem */
+  font-weight: 500;
+  color: #E5E7EB;
+  line-height: 1.5;
+}
+
+.formInput {
+  background: #111827;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  color: #F3F4F6;
+  transition: all 100ms ease-out;
+  min-height: 44px; /* Touch target accessibility */
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: #7C3AED;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+}
+
+.formInput:disabled {
+  background: #1F2937;
+  color: #6B7280;
+  cursor: not-allowed;
+}
+
+.formInput::placeholder {
+  color: #6B7280;
+}
+
+.formInputError {
+  border-color: #EF4444;
+}
+
+.formInputError:focus {
+  border-color: #EF4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.formError {
+  font-size: 0.875rem;
+  color: #EF4444;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+.formOptions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -8px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #D1D5DB;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #7C3AED;
+  cursor: pointer;
+}
+
+.checkboxText {
+  user-select: none;
+}
+
+.authButton {
+  background: #7C3AED;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 100ms ease-out;
+  min-height: 44px; /* Touch target accessibility */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.authButton:hover:not(:disabled) {
+  background: #6D28D9;
+  transform: translateY(-1px);
+}
+
+.authButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.authButton:disabled {
+  background: #4B5563;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.authButtonPrimary {
+  background: #7C3AED;
+}
+
+.authButtonPrimary:hover:not(:disabled) {
+  background: #6D28D9;
+}
+
+.authFooter {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #374151;
+}
+
+.authLink {
+  font-size: 0.875rem;
+  color: #9CA3AF;
+  margin: 0;
+}
+
+.authLinkText {
+  color: #7C3AED;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 100ms ease-out;
+}
+
+.authLinkText:hover {
+  color: #8B5CF6;
+  text-decoration: underline;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .authContainer {
+    padding: 8px;
+  }
+
+  .authCard {
+    padding: 24px;
+    border-radius: 8px;
+  }
+
+  .authTitle {
+    font-size: 1.75rem;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .authCard {
+    border-color: #D1D5DB;
+  }
+
+  .formInput {
+    border-color: #D1D5DB;
+  }
+
+  .authSubtitle {
+    color: #D1D5DB;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .authCard,
+  .formInput,
+  .authButton,
+  .authLinkText {
+    transition: none;
+  }
+
+  .authButton:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* Dark mode optimization */
+@media (prefers-color-scheme: dark) {
+  .authContainer {
+    background: linear-gradient(135deg, #000000 0%, #111111 50%, #000000 100%);
+  }
+}

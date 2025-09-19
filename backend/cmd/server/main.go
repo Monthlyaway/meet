@@ -55,7 +55,13 @@ func main() {
 
 	// Setup CORS middleware with security headers
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"http://localhost:3000"} // Allow Next.js dev server
+	corsConfig.AllowOrigins = []string{
+		"http://localhost:3000",
+		"http://localhost:3001",
+		"http://localhost:3002",
+		"http://localhost:3003",
+		"http://localhost:4000",
+	} // Allow Next.js dev server on multiple ports
 	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
 	corsConfig.ExposeHeaders = []string{"Content-Length"}
