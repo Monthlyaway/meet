@@ -1,0 +1,73 @@
+schema: 1
+story: "1.2"
+story_title: "User Authentication System"
+gate: CONCERNS
+status_reason: "Implementation solid but has security vulnerabilities and incomplete test coverage that should be addressed"
+reviewer: "Quinn (Test Architect)"
+updated: "2025-09-19T18:30:00Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "SEC-001"
+    severity: high
+    finding: "Default JWT secret used when environment variable not set"
+    suggested_action: "Remove default fallback and require JWT_SECRET environment variable"
+  - id: "SEC-002"
+    severity: medium
+    finding: "No input sanitization for SQL injection prevention"
+    suggested_action: "Add input validation and sanitization for user inputs"
+  - id: "TEST-001"
+    severity: medium
+    finding: "Missing integration tests for complete authentication flow"
+    suggested_action: "Add end-to-end tests covering registration, login, logout with database"
+  - id: "ARCH-001"
+    severity: medium
+    finding: "Password verification logic in repository layer violates clean architecture"
+    suggested_action: "Move password verification to authentication service"
+  - id: "SEC-003"
+    severity: low
+    finding: "Missing comprehensive input validation in handlers"
+    suggested_action: "Add comprehensive validation beyond struct tags"
+
+risk_summary:
+  totals: { critical: 0, high: 1, medium: 3, low: 1 }
+  recommendations:
+    must_fix: ["Remove default JWT secret fallback"]
+    monitor: ["Add comprehensive test coverage", "Improve input validation"]
+
+quality_score: 65
+expires: "2025-10-03T18:30:00Z"
+
+evidence:
+  tests_reviewed: 8
+  risks_identified: 5
+  trace:
+    ac_covered: [1, 2, 3, 4, 6]
+    ac_gaps: [5]
+
+nfr_validation:
+  security:
+    status: CONCERNS
+    notes: "Bcrypt properly implemented, rate limiting present, but JWT secret handling needs improvement"
+  performance:
+    status: PASS
+    notes: "Bcrypt cost 12 appropriate, rate limiting configured correctly"
+  reliability:
+    status: CONCERNS
+    notes: "Error handling good but missing database transaction management"
+  maintainability:
+    status: PASS
+    notes: "Clean architecture followed, good separation of concerns"
+
+recommendations:
+  immediate:
+    - action: "Remove default JWT secret and require environment variable"
+      refs: ["backend/internal/services/auth_service.go:29-33"]
+    - action: "Move password verification from repository to service layer"
+      refs: ["backend/internal/repositories/user_repo.go:135-138"]
+  future:
+    - action: "Add comprehensive integration tests"
+      refs: ["backend/internal/handlers/auth_test.go"]
+    - action: "Implement input sanitization middleware"
+      refs: ["backend/internal/handlers/auth.go"]

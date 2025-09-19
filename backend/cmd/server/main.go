@@ -10,6 +10,9 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/livekit/meet/backend/internal/config"
 	"github.com/livekit/meet/backend/internal/handlers"
+	"github.com/livekit/meet/backend/internal/middleware"
+	"github.com/livekit/meet/backend/internal/repositories"
+	"github.com/livekit/meet/backend/internal/services"
 )
 
 func main() {
@@ -50,18 +53,56 @@ func main() {
 	// Setup Gin router
 	router := gin.Default()
 
-	// Setup CORS middleware
+	// Setup CORS middleware with security headers
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = []string{"http://localhost:3000"} // Allow Next.js dev server
 	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
+	corsConfig.ExposeHeaders = []string{"Content-Length"}
+	corsConfig.AllowCredentials = true
+	corsConfig.MaxAge = 12 * 3600 // Cache preflight for 12 hours
 	router.Use(cors.New(corsConfig))
+
+	// Add security headers middleware
+	router.Use(func(c *gin.Context) {
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("X-XSS-Protection", "1; mode=block")
+		c.Next()
+	})
+
+	// Initialize repositories
+	userRepo := repositories.NewUserRepository(db)
+
+	// Initialize services
+	authService := services.NewAuthService(userRepo)
 
 	// Initialize handlers
 	healthHandler := handlers.NewHealthHandler(db)
+	authHandler := handlers.NewAuthHandler(authService)
 
 	// Setup routes
 	router.GET("/health", healthHandler.GetHealth)
+
+	// Setup rate limiter for authentication endpoints
+	// Allow 5 requests per minute for auth endpoints to prevent brute force attacks
+	authRateLimiter := middleware.NewRateLimiter(5.0/60.0, 5) // 5 requests per minute, burst of 5
+
+	// Authentication routes (public) with rate limiting
+	authRoutes := router.Group("/api/auth")
+	authRoutes.Use(authRateLimiter.Middleware())
+	{
+		authRoutes.POST("/register", authHandler.Register)
+		authRoutes.POST("/login", authHandler.Login)
+		authRoutes.POST("/logout", authHandler.Logout)
+	}
+
+	// Protected routes (require authentication)
+	protectedRoutes := router.Group("/api")
+	protectedRoutes.Use(middleware.AuthMiddleware(authService))
+	{
+		protectedRoutes.GET("/auth/profile", authHandler.GetProfile)
+	}
 
 	// Start server
 	address := fmt.Sprintf(":%s", port)
