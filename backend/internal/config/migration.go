@@ -7,6 +7,8 @@ import (
 	"log"
 	"path/filepath"
 	"strings"
+
+	"gorm.io/gorm"
 )
 
 // DatabaseMigrator handles database initialization and migrations
@@ -166,4 +168,41 @@ func (m *DatabaseMigrator) GetDatabaseStatus() (map[string]interface{}, error) {
 	status["table_counts"] = tableCounts
 
 	return status, nil
+}
+
+// GORMMigrator handles GORM database initialization and migrations
+type GORMMigrator struct {
+	db *gorm.DB
+}
+
+// NewGORMMigrator creates a new GORM database migrator
+func NewGORMMigrator(db *gorm.DB) *GORMMigrator {
+	return &GORMMigrator{db: db}
+}
+
+// AutoMigrate runs GORM auto-migration for all models
+func (m *GORMMigrator) AutoMigrate(models ...interface{}) error {
+	log.Println("Running GORM AutoMigrate...")
+
+	if err := m.db.AutoMigrate(models...); err != nil {
+		return fmt.Errorf("failed to auto-migrate: %w", err)
+	}
+
+	log.Println("GORM AutoMigrate completed successfully")
+	return nil
+}
+
+// ValidateGORMConnection checks if GORM connection is working
+func (m *GORMMigrator) ValidateGORMConnection() error {
+	sqlDB, err := m.db.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get underlying sql.DB: %w", err)
+	}
+
+	if err := sqlDB.Ping(); err != nil {
+		return fmt.Errorf("failed to ping GORM database: %w", err)
+	}
+
+	log.Println("GORM database connection validated successfully")
+	return nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/livekit/meet/backend/internal/config"
 	"github.com/livekit/meet/backend/internal/handlers"
 	"github.com/livekit/meet/backend/internal/middleware"
+	"github.com/livekit/meet/backend/internal/models"
 	"github.com/livekit/meet/backend/internal/repositories"
 	"github.com/livekit/meet/backend/internal/services"
 )
@@ -35,20 +36,31 @@ func main() {
 
 	log.Printf("Starting Gaming Voice Chat Backend Server on port %s (mode: %s)", port, ginMode)
 
-	// Initialize database connection
+	// Initialize GORM database connection
 	dbConfig := config.LoadDatabaseConfig()
-	db, err := dbConfig.ConnectDatabase()
+	db, err := dbConfig.ConnectGORMDatabase()
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Fatalf("Failed to connect to GORM database: %v", err)
 	}
-	defer db.Close()
 
-	// Initialize database schema
-	migrator := config.NewDatabaseMigrator(db)
-	if err := migrator.InitializeDatabase(); err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+	// Get underlying sql.DB for deferred close
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Failed to get underlying sql.DB: %v", err)
 	}
-	log.Println("Database connection and schema validated successfully")
+	defer sqlDB.Close()
+
+	// Initialize database schema with GORM AutoMigrate
+	migrator := config.NewGORMMigrator(db)
+	if err := migrator.ValidateGORMConnection(); err != nil {
+		log.Fatalf("Failed to validate GORM connection: %v", err)
+	}
+
+	// Run GORM AutoMigrate for all models
+	if err := migrator.AutoMigrate(&models.User{}, &models.Room{}, &models.Channel{}, &models.RoomMember{}); err != nil {
+		log.Fatalf("Failed to run GORM AutoMigrate: %v", err)
+	}
+	log.Println("GORM database connection validated and schema migrated successfully")
 
 	// Setup Gin router
 	router := gin.Default()
@@ -86,7 +98,7 @@ func main() {
 	roomService := services.NewRoomService(roomRepo, userRepo)
 
 	// Initialize handlers
-	healthHandler := handlers.NewHealthHandler(db)
+	healthHandler := handlers.NewHealthHandler(sqlDB)
 	authHandler := handlers.NewAuthHandler(authService)
 	roomHandler := handlers.NewRoomHandler(roomService)
 

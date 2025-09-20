@@ -80,6 +80,26 @@ so that **I can organize voice chat sessions for my gaming team**.
 - **IV2**: Current room joining by name/URL remains functional alongside token-based joining
 - **IV3**: LiveKit room management integration works correctly with new backend room metadata
 
+### Story 1.4.5: GORM Integration and Database Migration
+
+As a **developer**,
+I want **to migrate from raw SQL to GORM ORM**,
+so that **future database operations are more maintainable and development velocity is increased**.
+
+**Acceptance Criteria:**
+1. GORM dependency is added to Go module with MySQL driver
+2. All existing models are updated with GORM struct tags
+3. Database connection is migrated from sql.DB to gorm.DB
+4. All repository methods are refactored to use GORM methods
+5. All existing tests pass with GORM implementation
+6. Database migrations are handled through GORM AutoMigrate
+7. Performance benchmarks show no degradation from raw SQL
+
+**Integration Verification:**
+- **IV1**: All existing API endpoints continue to function identically
+- **IV2**: Database operations maintain same performance characteristics
+- **IV3**: No changes to service layer interfaces or business logic
+
 ### Story 1.5: Token-Based Room Joining
 
 As a **gaming user with an access token**,

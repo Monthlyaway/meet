@@ -8,6 +8,8 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 // DatabaseConfig holds database configuration
@@ -58,6 +60,34 @@ func (c *DatabaseConfig) ConnectDatabase() (*sql.DB, error) {
 	// Test the connection
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	return db, nil
+}
+
+// ConnectGORMDatabase establishes GORM database connection with proper pooling
+func (c *DatabaseConfig) ConnectGORMDatabase() (*gorm.DB, error) {
+	dsn := c.GetDSN()
+
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to open GORM database: %w", err)
+	}
+
+	// Get underlying sql.DB to configure connection pool
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
+	}
+
+	// Configure connection pool
+	sqlDB.SetMaxOpenConns(c.MaxOpenConns)
+	sqlDB.SetMaxIdleConns(c.MaxIdleConns)
+	sqlDB.SetConnMaxLifetime(c.ConnMaxLifetime)
+
+	// Test the connection
+	if err := sqlDB.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping GORM database: %w", err)
 	}
 
 	return db, nil

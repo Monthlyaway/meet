@@ -6,12 +6,12 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID           uint      `json:"id" db:"id"`
-	Username     string    `json:"username" db:"username"`
-	Email        string    `json:"email" db:"email"`
-	PasswordHash string    `json:"-" db:"password_hash"` // Never expose password hash in JSON
-	CreatedAt    time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
+	ID           uint      `json:"id" gorm:"primaryKey"`
+	Username     string    `json:"username" gorm:"uniqueIndex;size:50"`
+	Email        string    `json:"email" gorm:"uniqueIndex;size:100"`
+	PasswordHash string    `json:"-" gorm:"size:255"` // Never expose password hash in JSON
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 // UserRegistration represents the request payload for user registration

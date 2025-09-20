@@ -27,6 +27,52 @@ backend/
 └── go.mod                    # Go module definition
 ```
 
+### Database Layer with GORM
+```go
+// Database initialization with GORM
+func InitDB() (*gorm.DB, error) {
+    dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+        config.DBUser, config.DBPassword, config.DBHost, config.DBPort, config.DBName)
+
+    db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+    if err != nil {
+        return nil, err
+    }
+
+    // Auto-migrate models
+    err = db.AutoMigrate(&models.User{}, &models.Room{}, &models.Channel{})
+    return db, err
+}
+
+// Repository pattern with GORM
+type UserRepository struct {
+    db *gorm.DB
+}
+
+func NewUserRepository(db *gorm.DB) *UserRepository {
+    return &UserRepository{db: db}
+}
+
+func (r *UserRepository) Create(user *models.UserRegistration) (*models.User, error) {
+    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
+    if err != nil {
+        return nil, fmt.Errorf("failed to hash password: %w", err)
+    }
+
+    newUser := &models.User{
+        Username:     user.Username,
+        Email:        user.Email,
+        PasswordHash: string(hashedPassword),
+    }
+
+    if err := r.db.Create(newUser).Error; err != nil {
+        return nil, fmt.Errorf("failed to create user: %w", err)
+    }
+
+    return newUser, nil
+}
+```
+
 ### Authentication Middleware
 ```go
 func AuthMiddleware(jwtService *jwt.Service) gin.HandlerFunc {

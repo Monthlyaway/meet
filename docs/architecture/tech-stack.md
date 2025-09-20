@@ -27,6 +27,7 @@
 | CSS Framework | CSS Modules | Built-in | Component-scoped styling | Existing pattern in LiveKit Meet |
 | Voice/Video | LiveKit Server | 1.5+ | Local WebRTC infrastructure | Local livekit-server.exe for voice chat |
 | Database Driver | go-sql-driver/mysql | 1.7+ | MySQL connectivity for Go | Standard MySQL driver for Go |
+| ORM Framework | GORM | 1.25+ | Object-relational mapping | Simplified database operations and migrations |
 | HTTP Router | Gin Router | Built-in | REST API routing | Part of Gin framework |
 | CORS Handler | Gin CORS | 1.4+ | Cross-origin request handling | Enable frontend-backend communication |
 | Environment Config | godotenv | 1.4+ | Environment variable management | Simple .env file handling for Go |

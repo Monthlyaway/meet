@@ -12,7 +12,7 @@ func TestValidateRegistration(t *testing.T) {
 	registration := &models.UserRegistration{
 		Username: "testuser",
 		Email:    "test@example.com",
-		Password: "password123",
+		Password: "Password123",
 	}
 
 	err := handler.validateRegistration(registration)

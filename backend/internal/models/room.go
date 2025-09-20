@@ -6,37 +6,40 @@ import (
 
 // Room represents a gaming room in the system
 type Room struct {
-	ID          uint      `json:"id" db:"id"`
-	Name        string    `json:"name" db:"name"`
-	AccessToken string    `json:"access_token" db:"access_token"`
-	CreatorID   uint      `json:"creator_id" db:"creator_id"`
-	IsActive    bool      `json:"is_active" db:"is_active"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+	ID          uint      `json:"id" gorm:"primaryKey"`
+	Name        string    `json:"name" gorm:"size:100"`
+	AccessToken string    `json:"access_token" gorm:"uniqueIndex;size:255"`
+	CreatorID   uint      `json:"creator_id" gorm:"index"`
+	IsActive    bool      `json:"is_active" gorm:"default:true"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 
-	// Related data (loaded separately)
-	Creator  *User      `json:"creator,omitempty"`
-	Channels []Channel  `json:"channels,omitempty"`
-	Members  []User     `json:"members,omitempty"`
+	// GORM Relationships
+	Creator  *User      `json:"creator,omitempty" gorm:"foreignKey:CreatorID"`
+	Channels []Channel  `json:"channels,omitempty" gorm:"foreignKey:RoomID"`
+	Members  []User     `json:"members,omitempty" gorm:"many2many:room_members"`
 }
 
 // Channel represents a voice channel within a room
 type Channel struct {
-	ID              uint      `json:"id" db:"id"`
-	Name            string    `json:"name" db:"name"`
-	RoomID          uint      `json:"room_id" db:"room_id"`
-	IsMainLobby     bool      `json:"is_main_lobby" db:"is_main_lobby"`
-	LivekitRoomName string    `json:"livekit_room_name" db:"livekit_room_name"`
-	CreatedAt       time.Time `json:"created_at" db:"created_at"`
+	ID              uint      `json:"id" gorm:"primaryKey"`
+	Name            string    `json:"name" gorm:"size:100"`
+	RoomID          uint      `json:"room_id" gorm:"index"`
+	IsMainLobby     bool      `json:"is_main_lobby" gorm:"default:false"`
+	LivekitRoomName string    `json:"livekit_room_name" gorm:"size:255"`
+	CreatedAt       time.Time `json:"created_at"`
+
+	// GORM Relationships
+	Room Room `json:"room,omitempty" gorm:"foreignKey:RoomID"`
 }
 
 // RoomMember represents the many-to-many relationship between users and rooms
 type RoomMember struct {
-	ID       uint      `json:"id" db:"id"`
-	UserID   uint      `json:"user_id" db:"user_id"`
-	RoomID   uint      `json:"room_id" db:"room_id"`
-	JoinedAt time.Time `json:"joined_at" db:"joined_at"`
-	IsActive bool      `json:"is_active" db:"is_active"`
+	ID       uint      `json:"id" gorm:"primaryKey"`
+	UserID   uint      `json:"user_id" gorm:"index"`
+	RoomID   uint      `json:"room_id" gorm:"index"`
+	JoinedAt time.Time `json:"joined_at"`
+	IsActive bool      `json:"is_active" gorm:"default:true"`
 }
 
 // RoomCreation represents the request payload for room creation

@@ -12,6 +12,29 @@
 - created_at: timestamp - Account creation time
 - updated_at: timestamp - Last profile update
 
+#### Go Model with GORM Tags
+```go
+type User struct {
+    ID           uint      `json:"id" gorm:"primaryKey"`
+    Username     string    `json:"username" gorm:"uniqueIndex;size:50"`
+    Email        string    `json:"email" gorm:"uniqueIndex;size:100"`
+    PasswordHash string    `json:"-" gorm:"size:255"`
+    CreatedAt    time.Time `json:"created_at"`
+    UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type UserRegistration struct {
+    Username string `json:"username" binding:"required,min=3"`
+    Email    string `json:"email" binding:"required,email"`
+    Password string `json:"password" binding:"required,min=6"`
+}
+
+type UserLogin struct {
+    Email    string `json:"email" binding:"required,email"`
+    Password string `json:"password" binding:"required"`
+}
+```
+
 #### TypeScript Interface
 ```typescript
 interface User {
@@ -50,6 +73,31 @@ interface UserLogin {
 - creator_id: uint - Foreign key to User who created room
 - created_at: timestamp - Room creation time
 - is_active: boolean - Whether room is currently active
+
+#### Go Model with GORM Tags
+```go
+type Room struct {
+    ID          uint      `json:"id" gorm:"primaryKey"`
+    Name        string    `json:"name" gorm:"size:100"`
+    AccessToken string    `json:"access_token" gorm:"uniqueIndex;size:255"`
+    CreatorID   uint      `json:"creator_id" gorm:"index"`
+    IsActive    bool      `json:"is_active" gorm:"default:true"`
+    CreatedAt   time.Time `json:"created_at"`
+    UpdatedAt   time.Time `json:"updated_at"`
+
+    // Relationships
+    Creator  User      `json:"creator" gorm:"foreignKey:CreatorID"`
+    Channels []Channel `json:"channels" gorm:"foreignKey:RoomID"`
+}
+
+type RoomCreation struct {
+    Name string `json:"name" binding:"required,min=1"`
+}
+
+type RoomJoin struct {
+    AccessToken string `json:"access_token" binding:"required"`
+}
+```
 
 #### TypeScript Interface
 ```typescript
@@ -90,6 +138,26 @@ interface RoomJoin {
 - is_main_lobby: boolean - Whether this is the default main lobby
 - livekit_room_name: string - Corresponding LiveKit room identifier
 - created_at: timestamp - Channel creation time
+
+#### Go Model with GORM Tags
+```go
+type Channel struct {
+    ID               uint      `json:"id" gorm:"primaryKey"`
+    Name             string    `json:"name" gorm:"size:100"`
+    RoomID           uint      `json:"room_id" gorm:"index"`
+    IsMainLobby      bool      `json:"is_main_lobby" gorm:"default:false"`
+    LivekitRoomName  string    `json:"livekit_room_name" gorm:"size:255"`
+    CreatedAt        time.Time `json:"created_at"`
+
+    // Relationships
+    Room Room `json:"room" gorm:"foreignKey:RoomID"`
+}
+
+type ChannelCreation struct {
+    Name   string `json:"name" binding:"required,min=1"`
+    RoomID uint   `json:"room_id" binding:"required"`
+}
+```
 
 #### TypeScript Interface
 ```typescript

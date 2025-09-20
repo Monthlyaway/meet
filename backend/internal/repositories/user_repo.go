@@ -1,21 +1,21 @@
 package repositories
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 
 	"github.com/livekit/meet/backend/internal/models"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // UserRepository handles database operations for users
 type UserRepository struct {
-	db *sql.DB
+	db *gorm.DB
 }
 
 // NewUserRepository creates a new user repository
-func NewUserRepository(db *sql.DB) *UserRepository {
+func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
@@ -29,45 +29,26 @@ func (r *UserRepository) Create(user *models.UserRegistration) (*models.User, er
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	query := `
-		INSERT INTO users (username, email, password_hash, created_at, updated_at)
-		VALUES (?, ?, ?, NOW(), NOW())
-	`
+	newUser := &models.User{
+		Username:     user.Username,
+		Email:        user.Email,
+		PasswordHash: string(hashedPassword),
+	}
 
-	result, err := r.db.Exec(query, user.Username, user.Email, string(hashedPassword))
-	if err != nil {
+	if err := r.db.Create(newUser).Error; err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	userID, err := result.LastInsertId()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user ID: %w", err)
-	}
-
-	// Retrieve the created user
-	return r.GetByID(uint(userID))
+	return newUser, nil
 }
 
 // GetByID retrieves a user by ID
 func (r *UserRepository) GetByID(id uint) (*models.User, error) {
-	query := `
-		SELECT id, username, email, password_hash, created_at, updated_at
-		FROM users
-		WHERE id = ?
-	`
-
 	user := &models.User{}
-	err := r.db.QueryRow(query, id).Scan(
-		&user.ID,
-		&user.Username,
-		&user.Email,
-		&user.PasswordHash,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
+	err := r.db.First(user, id).Error
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("user not found")
 		}
 		return nil, fmt.Errorf("failed to get user: %w", err)
@@ -78,24 +59,11 @@ func (r *UserRepository) GetByID(id uint) (*models.User, error) {
 
 // GetByEmail retrieves a user by email
 func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
-	query := `
-		SELECT id, username, email, password_hash, created_at, updated_at
-		FROM users
-		WHERE email = ?
-	`
-
 	user := &models.User{}
-	err := r.db.QueryRow(query, email).Scan(
-		&user.ID,
-		&user.Username,
-		&user.Email,
-		&user.PasswordHash,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
+	err := r.db.Where("email = ?", email).First(user).Error
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("user not found")
 		}
 		return nil, fmt.Errorf("failed to get user: %w", err)
@@ -106,24 +74,11 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 
 // GetByUsername retrieves a user by username
 func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
-	query := `
-		SELECT id, username, email, password_hash, created_at, updated_at
-		FROM users
-		WHERE username = ?
-	`
-
 	user := &models.User{}
-	err := r.db.QueryRow(query, username).Scan(
-		&user.ID,
-		&user.Username,
-		&user.Email,
-		&user.PasswordHash,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
+	err := r.db.Where("username = ?", username).First(user).Error
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("user not found")
 		}
 		return nil, fmt.Errorf("failed to get user: %w", err)
@@ -139,9 +94,8 @@ func (r *UserRepository) VerifyPassword(user *models.User, password string) erro
 
 // EmailExists checks if an email is already registered
 func (r *UserRepository) EmailExists(email string) (bool, error) {
-	query := `SELECT COUNT(*) FROM users WHERE email = ?`
-	var count int
-	err := r.db.QueryRow(query, email).Scan(&count)
+	var count int64
+	err := r.db.Model(&models.User{}).Where("email = ?", email).Count(&count).Error
 	if err != nil {
 		return false, fmt.Errorf("failed to check email existence: %w", err)
 	}
@@ -150,9 +104,8 @@ func (r *UserRepository) EmailExists(email string) (bool, error) {
 
 // UsernameExists checks if a username is already taken
 func (r *UserRepository) UsernameExists(username string) (bool, error) {
-	query := `SELECT COUNT(*) FROM users WHERE username = ?`
-	var count int
-	err := r.db.QueryRow(query, username).Scan(&count)
+	var count int64
+	err := r.db.Model(&models.User{}).Where("username = ?", username).Count(&count).Error
 	if err != nil {
 		return false, fmt.Errorf("failed to check username existence: %w", err)
 	}
