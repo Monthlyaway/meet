@@ -3,6 +3,7 @@ package repositories
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/livekit/meet/backend/internal/models"
 	"gorm.io/gorm"
@@ -112,4 +113,67 @@ func (r *RoomRepository) IsRoomOwner(roomID, userID uint) (bool, error) {
 		return false, fmt.Errorf("failed to check room ownership: %v", err)
 	}
 	return count > 0, nil
+}
+
+// FindByAccessToken retrieves a room by its access token with channels preloaded
+func (r *RoomRepository) FindByAccessToken(accessToken string) (*models.Room, error) {
+	room := &models.Room{}
+	err := r.db.Preload("Channels").Where("access_token = ? AND is_active = ?", accessToken, true).First(room).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("room not found")
+		}
+		return nil, fmt.Errorf("failed to get room: %v", err)
+	}
+
+	return room, nil
+}
+
+// CreateOrUpdateMembership creates a new room membership or reactivates an existing one
+func (r *RoomRepository) CreateOrUpdateMembership(userID, roomID uint) (*models.RoomMember, error) {
+	// Check if membership already exists
+	var existingMembership models.RoomMember
+	err := r.db.Where("user_id = ? AND room_id = ?", userID, roomID).First(&existingMembership).Error
+
+	if err == nil {
+		// Membership exists, update it to active
+		existingMembership.IsActive = true
+		existingMembership.JoinedAt = time.Now()
+		if err := r.db.Save(&existingMembership).Error; err != nil {
+			return nil, fmt.Errorf("failed to update membership: %v", err)
+		}
+		return &existingMembership, nil
+	}
+
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("failed to check existing membership: %v", err)
+	}
+
+	// Create new membership
+	newMembership := &models.RoomMember{
+		UserID:   userID,
+		RoomID:   roomID,
+		JoinedAt: time.Now(),
+		IsActive: true,
+	}
+
+	if err := r.db.Create(newMembership).Error; err != nil {
+		return nil, fmt.Errorf("failed to create membership: %v", err)
+	}
+
+	return newMembership, nil
+}
+
+// GetMainLobbyChannel gets the main lobby channel for a room
+func (r *RoomRepository) GetMainLobbyChannel(roomID uint) (*models.Channel, error) {
+	var channel models.Channel
+	err := r.db.Where("room_id = ? AND is_main_lobby = ?", roomID, true).First(&channel).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("main lobby channel not found")
+		}
+		return nil, fmt.Errorf("failed to get main lobby channel: %v", err)
+	}
+	return &channel, nil
 }

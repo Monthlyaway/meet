@@ -60,6 +60,17 @@ type RoomResponse struct {
 	Members     []UserResponse `json:"members,omitempty"`
 }
 
+// RoomJoin represents the request payload for room joining
+type RoomJoin struct {
+	AccessToken string `json:"accessToken" binding:"required"`
+}
+
+// RoomJoinResponse represents the response for successful room joining
+type RoomJoinResponse struct {
+	Room        RoomResponse `json:"room"`
+	LivekitToken string       `json:"livekit_token"`
+}
+
 // ToResponse converts a Room to RoomResponse
 func (r *Room) ToResponse() RoomResponse {
 	resp := RoomResponse{

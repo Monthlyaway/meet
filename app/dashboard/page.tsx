@@ -83,11 +83,14 @@ export default function DashboardPage() {
               <p className="text-gray-300 mb-4">
                 Use an access token to join an existing gaming room.
               </p>
-              <button className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition-colors">
+              <button
+                onClick={() => router.push('/join-room')}
+                className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition-colors"
+              >
                 Join Room
               </button>
               <p className="text-gray-500 text-sm mt-2">
-                Coming soon: Enter access token to join rooms
+                Enter your room access token to join
               </p>
             </div>
           </div>

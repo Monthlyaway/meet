@@ -9,4 +9,5 @@ type RoomServiceInterface interface {
 	GetRoomWithDetails(roomID uint) (*models.Room, error)
 	DeleteRoom(roomID, userID uint) error
 	ValidateRoomAccess(roomID, userID uint) (bool, error)
+	JoinRoom(userID uint, accessToken string) (*models.RoomJoinResponse, error)
 }

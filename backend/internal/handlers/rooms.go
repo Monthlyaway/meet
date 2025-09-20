@@ -220,3 +220,57 @@ func (h *RoomHandler) DeleteRoom(c *gin.Context) {
 		"message": "Room deleted successfully",
 	})
 }
+
+// JoinRoom handles room joining via access token
+// POST /api/rooms/join
+func (h *RoomHandler) JoinRoom(c *gin.Context) {
+	// Get user from context (set by auth middleware)
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Authentication required",
+		})
+		return
+	}
+
+	userModel, ok := user.(*models.User)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Internal server error",
+		})
+		return
+	}
+
+	var roomJoin models.RoomJoin
+	if err := c.ShouldBindJSON(&roomJoin); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request format",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Join room using access token
+	joinResponse, err := h.roomService.JoinRoom(userModel.ID, roomJoin.AccessToken)
+	if err != nil {
+		if err.Error() == "invalid access token: room not found" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":   "Invalid access token",
+				"message": "Room not found or access token is invalid",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to join room",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Successfully joined room",
+		"room":    joinResponse.Room,
+		"livekitRoomName": joinResponse.LivekitToken, // This is actually the LiveKit room name
+	})
+}

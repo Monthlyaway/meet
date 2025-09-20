@@ -130,6 +130,7 @@ func main() {
 		protectedRoutes.GET("/rooms", roomHandler.GetUserRooms)
 		protectedRoutes.GET("/rooms/:id", roomHandler.GetRoom)
 		protectedRoutes.DELETE("/rooms/:id", roomHandler.DeleteRoom)
+		protectedRoutes.POST("/rooms/join", roomHandler.JoinRoom)
 	}
 
 	// Start server

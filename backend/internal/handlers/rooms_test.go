@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -51,6 +52,14 @@ func (m *MockRoomService) DeleteRoom(roomID, userID uint) error {
 func (m *MockRoomService) ValidateRoomAccess(roomID, userID uint) (bool, error) {
 	args := m.Called(roomID, userID)
 	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockRoomService) JoinRoom(userID uint, accessToken string) (*models.RoomJoinResponse, error) {
+	args := m.Called(userID, accessToken)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.RoomJoinResponse), args.Error(1)
 }
 
 func TestCreateRoom(t *testing.T) {
@@ -286,5 +295,172 @@ func TestDeleteRoom(t *testing.T) {
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
 		assert.Equal(t, "Invalid room ID", response["error"])
+	})
+}
+
+func TestJoinRoom(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("successful room join", func(t *testing.T) {
+		// Setup
+		mockService := new(MockRoomService)
+		handler := NewRoomHandler(mockService)
+
+		testUser := &models.User{
+			ID:       1,
+			Username: "testuser",
+			Email:    "test@example.com",
+		}
+
+		accessToken := "test-access-token-123"
+		roomJoin := models.RoomJoin{
+			AccessToken: accessToken,
+		}
+
+		expectedJoinResponse := &models.RoomJoinResponse{
+			Room: models.RoomResponse{
+				ID:          1,
+				Name:        "Test Gaming Room",
+				AccessToken: accessToken,
+				CreatorID:   2,
+				IsActive:    true,
+				Channels: []models.Channel{
+					{
+						ID:              1,
+						Name:            "Main Lobby",
+						RoomID:          1,
+						IsMainLobby:     true,
+						LivekitRoomName: "test-main-lobby",
+					},
+				},
+			},
+			LivekitToken: "test-main-lobby",
+		}
+
+		mockService.On("JoinRoom", uint(1), accessToken).Return(expectedJoinResponse, nil)
+
+		// Create request
+		roomData, _ := json.Marshal(roomJoin)
+		req := httptest.NewRequest("POST", "/api/rooms/join", bytes.NewBuffer(roomData))
+		req.Header.Set("Content-Type", "application/json")
+
+		// Create gin context with user
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = req
+		c.Set("user", testUser)
+
+		// Execute
+		handler.JoinRoom(c)
+
+		// Assert
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, "Successfully joined room", response["message"])
+		assert.Equal(t, "test-main-lobby", response["livekitRoomName"])
+
+		room := response["room"].(map[string]interface{})
+		assert.Equal(t, "Test Gaming Room", room["name"])
+		assert.Equal(t, float64(1), room["id"])
+
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("invalid access token", func(t *testing.T) {
+		// Setup
+		mockService := new(MockRoomService)
+		handler := NewRoomHandler(mockService)
+
+		testUser := &models.User{ID: 1}
+
+		roomJoin := models.RoomJoin{
+			AccessToken: "invalid-token",
+		}
+
+		// Mock service returns error for invalid token
+		mockService.On("JoinRoom", uint(1), "invalid-token").Return(nil, fmt.Errorf("invalid access token: room not found"))
+
+		// Create request
+		roomData, _ := json.Marshal(roomJoin)
+		req := httptest.NewRequest("POST", "/api/rooms/join", bytes.NewBuffer(roomData))
+		req.Header.Set("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = req
+		c.Set("user", testUser)
+
+		// Execute
+		handler.JoinRoom(c)
+
+		// Assert
+		assert.Equal(t, http.StatusNotFound, w.Code)
+
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, "Invalid access token", response["error"])
+		assert.Equal(t, "Room not found or access token is invalid", response["message"])
+
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("invalid request body", func(t *testing.T) {
+		// Setup
+		mockService := new(MockRoomService)
+		handler := NewRoomHandler(mockService)
+
+		testUser := &models.User{ID: 1}
+
+		// Create invalid request (missing required field)
+		req := httptest.NewRequest("POST", "/api/rooms/join", bytes.NewBuffer([]byte(`{"invalid": "data"}`)))
+		req.Header.Set("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = req
+		c.Set("user", testUser)
+
+		// Execute
+		handler.JoinRoom(c)
+
+		// Assert
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, "Invalid request format", response["error"])
+	})
+
+	t.Run("missing authentication", func(t *testing.T) {
+		// Setup
+		mockService := new(MockRoomService)
+		handler := NewRoomHandler(mockService)
+
+		roomJoin := models.RoomJoin{AccessToken: "test-token"}
+		roomData, _ := json.Marshal(roomJoin)
+
+		req := httptest.NewRequest("POST", "/api/rooms/join", bytes.NewBuffer(roomData))
+		req.Header.Set("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = req
+		// Don't set user in context
+
+		// Execute
+		handler.JoinRoom(c)
+
+		// Assert
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, "Authentication required", response["error"])
 	})
 }

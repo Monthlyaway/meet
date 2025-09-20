@@ -104,6 +104,15 @@ class ApiClient {
   setBaseURL(url: string): void {
     this.baseURL = url;
   }
+
+  // Room joining with access token
+  async joinRoom(accessToken: string): Promise<{
+    message: string;
+    room: any;
+    livekitRoomName: string;
+  }> {
+    return this.post('/api/rooms/join', { accessToken: accessToken });
+  }
 }
 
 // Export a singleton instance
