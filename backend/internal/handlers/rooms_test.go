@@ -360,7 +360,7 @@ func TestJoinRoom(t *testing.T) {
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
 		assert.Equal(t, "Successfully joined room", response["message"])
-		assert.Equal(t, "test-main-lobby", response["livekitRoomName"])
+		assert.Equal(t, "test-main-lobby", response["livekitToken"])
 
 		room := response["room"].(map[string]interface{})
 		assert.Equal(t, "Test Gaming Room", room["name"])

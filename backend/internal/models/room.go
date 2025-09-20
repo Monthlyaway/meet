@@ -67,8 +67,22 @@ type RoomJoin struct {
 
 // RoomJoinResponse represents the response for successful room joining
 type RoomJoinResponse struct {
-	Room        RoomResponse `json:"room"`
-	LivekitToken string       `json:"livekit_token"`
+	Room             RoomResponse `json:"room"`
+	MainLobbyChannel Channel      `json:"main_lobby_channel"`
+	LivekitToken     string       `json:"livekit_token"`
+}
+
+// UserChannel represents which channel a user is currently in
+type UserChannel struct {
+	ID                   uint      `json:"id" gorm:"primaryKey"`
+	UserID               uint      `json:"user_id" gorm:"index"`
+	ChannelID            uint      `json:"channel_id" gorm:"index"`
+	ConnectedAt          time.Time `json:"connected_at"`
+	LivekitParticipantID string    `json:"livekit_participant_id" gorm:"size:100"`
+
+	// GORM Relationships
+	User    User    `json:"user,omitempty" gorm:"foreignKey:UserID"`
+	Channel Channel `json:"channel,omitempty" gorm:"foreignKey:ChannelID"`
 }
 
 // ToResponse converts a Room to RoomResponse

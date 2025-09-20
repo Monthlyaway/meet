@@ -57,7 +57,7 @@ func main() {
 	}
 
 	// Run GORM AutoMigrate for all models
-	if err := migrator.AutoMigrate(&models.User{}, &models.Room{}, &models.Channel{}, &models.RoomMember{}); err != nil {
+	if err := migrator.AutoMigrate(&models.User{}, &models.Room{}, &models.Channel{}, &models.RoomMember{}, &models.UserChannel{}); err != nil {
 		log.Fatalf("Failed to run GORM AutoMigrate: %v", err)
 	}
 	log.Println("GORM database connection validated and schema migrated successfully")
@@ -67,13 +67,7 @@ func main() {
 
 	// Setup CORS middleware with security headers
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{
-		"http://localhost:3000",
-		"http://localhost:3001",
-		"http://localhost:3002",
-		"http://localhost:3003",
-		"http://localhost:4000",
-	} // Allow Next.js dev server on multiple ports
+	corsConfig.AllowAllOrigins = true // Disable CORS restrictions
 	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
 	corsConfig.ExposeHeaders = []string{"Content-Length"}
@@ -96,11 +90,13 @@ func main() {
 	// Initialize services
 	authService := services.NewAuthService(userRepo)
 	roomService := services.NewRoomService(roomRepo, userRepo)
+	channelService := services.NewChannelService(roomRepo, userRepo)
 
 	// Initialize handlers
 	healthHandler := handlers.NewHealthHandler(sqlDB)
 	authHandler := handlers.NewAuthHandler(authService)
 	roomHandler := handlers.NewRoomHandler(roomService)
+	channelHandler := handlers.NewChannelHandler(channelService)
 
 	// Setup routes
 	router.GET("/health", healthHandler.GetHealth)
@@ -131,6 +127,12 @@ func main() {
 		protectedRoutes.GET("/rooms/:id", roomHandler.GetRoom)
 		protectedRoutes.DELETE("/rooms/:id", roomHandler.DeleteRoom)
 		protectedRoutes.POST("/rooms/join", roomHandler.JoinRoom)
+
+		// Channel management routes
+		protectedRoutes.POST("/channels/:id/join", channelHandler.SwitchChannel)
+		protectedRoutes.GET("/channels/:id/members", channelHandler.GetChannelMembers)
+		protectedRoutes.POST("/rooms/:roomId/channels", channelHandler.CreateTeamChannel)
+		protectedRoutes.GET("/user/current-channel", channelHandler.GetUserCurrentChannel)
 	}
 
 	// Start server

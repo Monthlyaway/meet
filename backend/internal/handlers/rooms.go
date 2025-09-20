@@ -269,8 +269,9 @@ func (h *RoomHandler) JoinRoom(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Successfully joined room",
-		"room":    joinResponse.Room,
-		"livekitRoomName": joinResponse.LivekitToken, // This is actually the LiveKit room name
+		"message":          "Successfully joined room",
+		"room":             joinResponse.Room,
+		"mainLobbyChannel": joinResponse.MainLobbyChannel,
+		"livekitToken":     joinResponse.LivekitToken,
 	})
 }

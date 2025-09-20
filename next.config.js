@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: false,
   productionBrowserSourceMaps: true,
+  allowedDevOrigins: ['192.168.31.230'],
   images: {
     formats: ['image/webp'],
   },

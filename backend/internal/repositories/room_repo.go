@@ -177,3 +177,117 @@ func (r *RoomRepository) GetMainLobbyChannel(roomID uint) (*models.Channel, erro
 	}
 	return &channel, nil
 }
+
+// ConnectUserToMainLobby creates a UserChannel record linking user to main lobby
+func (r *RoomRepository) ConnectUserToMainLobby(userID uint, roomID uint) (*models.UserChannel, error) {
+	// First get the main lobby channel
+	mainLobby, err := r.GetMainLobbyChannel(roomID)
+	if err != nil {
+		return nil, fmt.Errorf("main lobby not found: %w", err)
+	}
+
+	// Generate LiveKit participant ID
+	participantID := fmt.Sprintf("user_%d_%d", userID, time.Now().Unix())
+
+	// Remove any existing channel connection for this user (unique constraint)
+	if err := r.db.Where("user_id = ?", userID).Delete(&models.UserChannel{}).Error; err != nil {
+		return nil, fmt.Errorf("failed to remove existing channel connection: %w", err)
+	}
+
+	// Create new user channel connection
+	userChannel := &models.UserChannel{
+		UserID:               userID,
+		ChannelID:            mainLobby.ID,
+		ConnectedAt:          time.Now(),
+		LivekitParticipantID: participantID,
+	}
+
+	if err := r.db.Create(userChannel).Error; err != nil {
+		return nil, fmt.Errorf("failed to connect user to main lobby: %w", err)
+	}
+
+	return userChannel, nil
+}
+
+// GetUserCurrentChannel gets the channel a user is currently connected to
+func (r *RoomRepository) GetUserCurrentChannel(userID uint) (*models.UserChannel, error) {
+	var userChannel models.UserChannel
+	err := r.db.Preload("Channel").Where("user_id = ?", userID).First(&userChannel).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("user not connected to any channel")
+		}
+		return nil, fmt.Errorf("failed to get user current channel: %w", err)
+	}
+	return &userChannel, nil
+}
+
+// GetChannelMembers retrieves all users currently connected to a channel
+func (r *RoomRepository) GetChannelMembers(channelID uint) ([]models.UserChannel, error) {
+	var userChannels []models.UserChannel
+	err := r.db.Preload("User").Where("channel_id = ?", channelID).Find(&userChannels).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to get channel members: %w", err)
+	}
+	return userChannels, nil
+}
+
+// GetRoomMembersWithChannels retrieves all users in a room with their current channel info
+func (r *RoomRepository) GetRoomMembersWithChannels(roomID uint) ([]models.User, error) {
+	var users []models.User
+
+	// Get all active room members
+	err := r.db.Table("users").
+		Joins("JOIN room_members ON users.id = room_members.user_id").
+		Where("room_members.room_id = ? AND room_members.is_active = ?", roomID, true).
+		Find(&users).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get room members: %w", err)
+	}
+
+	return users, nil
+}
+
+// SwitchUserChannel moves a user from their current channel to a new channel
+func (r *RoomRepository) SwitchUserChannel(userID uint, newChannelID uint) (*models.UserChannel, error) {
+	// Generate new LiveKit participant ID
+	participantID := fmt.Sprintf("user_%d_%d", userID, time.Now().Unix())
+
+	// Remove existing channel connection
+	if err := r.db.Where("user_id = ?", userID).Delete(&models.UserChannel{}).Error; err != nil {
+		return nil, fmt.Errorf("failed to remove existing channel connection: %w", err)
+	}
+
+	// Create new channel connection
+	userChannel := &models.UserChannel{
+		UserID:               userID,
+		ChannelID:            newChannelID,
+		ConnectedAt:          time.Now(),
+		LivekitParticipantID: participantID,
+	}
+
+	if err := r.db.Create(userChannel).Error; err != nil {
+		return nil, fmt.Errorf("failed to create new channel connection: %w", err)
+	}
+
+	// Load the channel information
+	if err := r.db.Preload("Channel").First(userChannel, userChannel.ID).Error; err != nil {
+		return nil, fmt.Errorf("failed to load channel info: %w", err)
+	}
+
+	return userChannel, nil
+}
+
+// GetChannelByID retrieves a channel by its ID
+func (r *RoomRepository) GetChannelByID(channelID uint) (*models.Channel, error) {
+	var channel models.Channel
+	err := r.db.First(&channel, channelID).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("channel not found")
+		}
+		return nil, fmt.Errorf("failed to get channel: %w", err)
+	}
+	return &channel, nil
+}
