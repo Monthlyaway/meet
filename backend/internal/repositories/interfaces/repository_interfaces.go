@@ -21,6 +21,7 @@ type RoomRepositoryInterface interface {
 	SwitchUserChannel(userID uint, newChannelID uint) (*models.UserChannel, error)
 	GetChannelMembers(channelID uint) ([]models.UserChannel, error)
 	GetUserCurrentChannel(userID uint) (*models.UserChannel, error)
+	IsUserMember(userID, roomID uint) (bool, error)
 }
 
 // UserRepositoryInterface defines the interface for user repository operations

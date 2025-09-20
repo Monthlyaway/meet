@@ -61,6 +61,13 @@ func (h *ChannelHandler) SwitchChannel(c *gin.Context) {
 			return
 		}
 
+		if err.Error() == "user not member of room" {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "User not member of room containing this channel",
+			})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to switch channel",
 			"details": err.Error(),

@@ -127,6 +127,7 @@ export function PageClientImpl(props: {
 
         const data = await response.json();
 
+
         // Convert API response channels from snake_case to camelCase
         const channels: Channel[] = data.room.channels?.map((apiCh: APIChannel) => ({
           id: apiCh.id,
@@ -143,8 +144,21 @@ export function PageClientImpl(props: {
           throw new Error('Main lobby channel not found');
         }
 
+        // Convert room data from snake_case to camelCase
+        const roomData: GamingRoom = {
+          id: data.room.id,
+          name: data.room.name,
+          accessToken: data.room.access_token,
+          creatorId: data.room.creator_id, // Fix: map snake_case to camelCase
+          isActive: data.room.is_active,
+          createdAt: data.room.created_at,
+          creator: data.room.creator,
+          channels,
+          members: data.room.members,
+        };
+
         const roomResponse: RoomJoinResponse = {
-          room: { ...data.room, channels },
+          room: roomData,
           mainLobbyChannel: mainLobby,
           livekitToken: mainLobby.livekitRoomName,
         };
@@ -270,6 +284,7 @@ export function PageClientImpl(props: {
 
   const isRoomAdmin = roomData && user && roomData.room.creatorId === user.id;
 
+
   if (loading) {
     return (
       <main data-lk-theme="default" style={{ height: '100%' }}>
@@ -323,6 +338,7 @@ export function PageClientImpl(props: {
             <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>
               {roomData.room.name}
             </h3>
+
 
             {/* Channel Management for Admins */}
             {isRoomAdmin && (

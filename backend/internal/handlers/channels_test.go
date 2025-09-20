@@ -339,3 +339,171 @@ func TestDeleteTeamChannel_NotFound(t *testing.T) {
 
 	mockService.AssertExpectations(t)
 }
+
+func TestSwitchChannel_Success(t *testing.T) {
+	// Setup
+	mockService := new(MockChannelService)
+	handler := NewChannelHandler(mockService)
+	router := setupTestRouter()
+
+	// Mock user
+	testUser := &models.User{
+		ID:       1,
+		Username: "testuser",
+		Email:    "test@example.com",
+	}
+
+	// Expected user channel
+	expectedUserChannel := &models.UserChannel{
+		ID:                   1,
+		UserID:               1,
+		ChannelID:            2,
+		LivekitParticipantID: "user_1_123456789",
+		Channel: models.Channel{
+			ID:              2,
+			Name:            "Team Alpha",
+			RoomID:          1,
+			IsMainLobby:     false,
+			LivekitRoomName: "room_1_channel_team_alpha",
+		},
+	}
+
+	// Setup mock expectations
+	mockService.On("SwitchToChannel", uint(1), uint(2)).Return(expectedUserChannel, nil)
+
+	// Setup route with middleware that sets user
+	router.POST("/api/channels/:id/join", func(c *gin.Context) {
+		c.Set("user", testUser)
+		handler.SwitchChannel(c)
+	})
+
+	// Execute request
+	req, _ := http.NewRequest("POST", "/api/channels/2/join", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Assertions
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "Successfully switched channel", response["message"])
+	assert.NotNil(t, response["channel"])
+	assert.NotNil(t, response["livekitToken"])
+	assert.NotNil(t, response["participantId"])
+
+	mockService.AssertExpectations(t)
+}
+
+func TestSwitchChannel_UserNotMember(t *testing.T) {
+	// Setup
+	mockService := new(MockChannelService)
+	handler := NewChannelHandler(mockService)
+	router := setupTestRouter()
+
+	// Mock user
+	testUser := &models.User{
+		ID:       1,
+		Username: "testuser",
+		Email:    "test@example.com",
+	}
+
+	// Setup mock expectations - return user not member error
+	mockService.On("SwitchToChannel", uint(1), uint(2)).Return((*models.UserChannel)(nil), fmt.Errorf("user not member of room"))
+
+	// Setup route with middleware that sets user
+	router.POST("/api/channels/:id/join", func(c *gin.Context) {
+		c.Set("user", testUser)
+		handler.SwitchChannel(c)
+	})
+
+	// Execute request
+	req, _ := http.NewRequest("POST", "/api/channels/2/join", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Assertions
+	assert.Equal(t, http.StatusForbidden, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "User not member of room containing this channel", response["error"])
+
+	mockService.AssertExpectations(t)
+}
+
+func TestSwitchChannel_ChannelNotFound(t *testing.T) {
+	// Setup
+	mockService := new(MockChannelService)
+	handler := NewChannelHandler(mockService)
+	router := setupTestRouter()
+
+	// Mock user
+	testUser := &models.User{
+		ID:       1,
+		Username: "testuser",
+		Email:    "test@example.com",
+	}
+
+	// Setup mock expectations - return channel not found error
+	mockService.On("SwitchToChannel", uint(1), uint(999)).Return((*models.UserChannel)(nil), fmt.Errorf("channel not found"))
+
+	// Setup route with middleware that sets user
+	router.POST("/api/channels/:id/join", func(c *gin.Context) {
+		c.Set("user", testUser)
+		handler.SwitchChannel(c)
+	})
+
+	// Execute request
+	req, _ := http.NewRequest("POST", "/api/channels/999/join", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Assertions
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "Channel not found", response["error"])
+
+	mockService.AssertExpectations(t)
+}
+
+func TestSwitchChannel_InvalidChannelID(t *testing.T) {
+	// Setup
+	mockService := new(MockChannelService)
+	handler := NewChannelHandler(mockService)
+	router := setupTestRouter()
+
+	// Mock user
+	testUser := &models.User{
+		ID:       1,
+		Username: "testuser",
+		Email:    "test@example.com",
+	}
+
+	// Setup route with middleware that sets user
+	router.POST("/api/channels/:id/join", func(c *gin.Context) {
+		c.Set("user", testUser)
+		handler.SwitchChannel(c)
+	})
+
+	// Execute request with invalid channel ID
+	req, _ := http.NewRequest("POST", "/api/channels/invalid/join", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Assertions
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "Invalid channel ID", response["error"])
+
+	// Verify no service calls were made
+	mockService.AssertNotCalled(t, "SwitchToChannel", mock.Anything, mock.Anything)
+}

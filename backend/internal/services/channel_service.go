@@ -30,8 +30,13 @@ func (s *ChannelService) SwitchToChannel(userID uint, channelID uint) (*models.U
 	}
 
 	// 2. Validate that the user is a member of the room containing this channel
-	// TODO: Add proper room membership validation
-	// For now, we assume the user has access to the room
+	isMember, err := s.roomRepo.IsUserMember(userID, channel.RoomID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate room membership: %w", err)
+	}
+	if !isMember {
+		return nil, fmt.Errorf("user not member of room")
+	}
 
 	// 3. Switch the user to the new channel
 	userChannel, err := s.roomRepo.SwitchUserChannel(userID, channelID)

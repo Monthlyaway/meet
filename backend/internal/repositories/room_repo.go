@@ -300,3 +300,26 @@ func (r *RoomRepository) DeleteChannel(channelID uint) error {
 	}
 	return nil
 }
+
+// IsUserMember checks if a user is a member of a room
+func (r *RoomRepository) IsUserMember(userID, roomID uint) (bool, error) {
+	// Check if user is the room owner
+	isOwner, err := r.IsRoomOwner(roomID, userID)
+	if err != nil {
+		return false, fmt.Errorf("failed to check room ownership: %w", err)
+	}
+	if isOwner {
+		return true, nil
+	}
+
+	// Check if user has an active membership
+	var count int64
+	err = r.db.Model(&models.RoomMember{}).
+		Where("user_id = ? AND room_id = ? AND is_active = ?", userID, roomID, true).
+		Count(&count).Error
+	if err != nil {
+		return false, fmt.Errorf("failed to check room membership: %w", err)
+	}
+
+	return count > 0, nil
+}

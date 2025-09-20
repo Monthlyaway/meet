@@ -34,6 +34,11 @@ func (m *MockRoomRepository) DeleteChannel(channelID uint) error {
 	return args.Error(0)
 }
 
+func (m *MockRoomRepository) IsUserMember(userID, roomID uint) (bool, error) {
+	args := m.Called(userID, roomID)
+	return args.Bool(0), args.Error(1)
+}
+
 func TestSwitchToChannel_Success(t *testing.T) {
 	// Arrange
 	mockRoomRepo := new(MockRoomRepository)
@@ -55,6 +60,7 @@ func TestSwitchToChannel_Success(t *testing.T) {
 
 	// Setup mocks
 	mockRoomRepo.On("GetChannelByID", channelID).Return(mockChannel, nil)
+	mockRoomRepo.On("IsUserMember", userID, mockChannel.RoomID).Return(true, nil)
 	mockRoomRepo.On("SwitchUserChannel", userID, channelID).Return(mockUserChannel, nil)
 
 	// Act
@@ -90,6 +96,37 @@ func TestSwitchToChannel_ChannelNotFound(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "channel not found")
+}
+
+func TestSwitchToChannel_UserNotMember(t *testing.T) {
+	// Arrange
+	mockRoomRepo := new(MockRoomRepository)
+	mockUserRepo := new(MockUserRepository)
+	service := NewChannelService(mockRoomRepo, mockUserRepo)
+
+	userID := uint(1)
+	channelID := uint(2)
+	roomID := uint(1)
+
+	mockChannel := &models.Channel{
+		ID: 2, Name: "Team Alpha", RoomID: roomID,
+		IsMainLobby: false, LivekitRoomName: "room_1_channel_team_alpha",
+	}
+
+	// Setup mocks - user is not a member of the room
+	mockRoomRepo.On("GetChannelByID", channelID).Return(mockChannel, nil)
+	mockRoomRepo.On("IsUserMember", userID, roomID).Return(false, nil)
+
+	// Act
+	result, err := service.SwitchToChannel(userID, channelID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "user not member of room")
+
+	// Verify that SwitchUserChannel was not called
+	mockRoomRepo.AssertNotCalled(t, "SwitchUserChannel", mock.Anything, mock.Anything)
 }
 
 func TestCreateTeamChannel_Success(t *testing.T) {
