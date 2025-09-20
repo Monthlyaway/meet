@@ -79,13 +79,16 @@ func main() {
 
 	// Initialize repositories
 	userRepo := repositories.NewUserRepository(db)
+	roomRepo := repositories.NewRoomRepository(db)
 
 	// Initialize services
 	authService := services.NewAuthService(userRepo)
+	roomService := services.NewRoomService(roomRepo, userRepo)
 
 	// Initialize handlers
 	healthHandler := handlers.NewHealthHandler(db)
 	authHandler := handlers.NewAuthHandler(authService)
+	roomHandler := handlers.NewRoomHandler(roomService)
 
 	// Setup routes
 	router.GET("/health", healthHandler.GetHealth)
@@ -107,7 +110,14 @@ func main() {
 	protectedRoutes := router.Group("/api")
 	protectedRoutes.Use(middleware.AuthMiddleware(authService))
 	{
+		// Authentication routes
 		protectedRoutes.GET("/auth/profile", authHandler.GetProfile)
+
+		// Room management routes
+		protectedRoutes.POST("/rooms", roomHandler.CreateRoom)
+		protectedRoutes.GET("/rooms", roomHandler.GetUserRooms)
+		protectedRoutes.GET("/rooms/:id", roomHandler.GetRoom)
+		protectedRoutes.DELETE("/rooms/:id", roomHandler.DeleteRoom)
 	}
 
 	// Start server
