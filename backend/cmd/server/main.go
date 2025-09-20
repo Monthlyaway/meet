@@ -132,6 +132,7 @@ func main() {
 		protectedRoutes.POST("/channels/:id/join", channelHandler.SwitchChannel)
 		protectedRoutes.GET("/channels/:id/members", channelHandler.GetChannelMembers)
 		protectedRoutes.POST("/rooms/:roomId/channels", channelHandler.CreateTeamChannel)
+		protectedRoutes.DELETE("/channels/:channelId", channelHandler.DeleteTeamChannel)
 		protectedRoutes.GET("/user/current-channel", channelHandler.GetUserCurrentChannel)
 	}
 

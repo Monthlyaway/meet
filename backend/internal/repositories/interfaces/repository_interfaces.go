@@ -17,6 +17,7 @@ type RoomRepositoryInterface interface {
 	IsRoomOwner(roomID, userID uint) (bool, error)
 	GetRoomByAccessToken(token string) (*models.Room, error)
 	GetChannelByID(channelID uint) (*models.Channel, error)
+	DeleteChannel(channelID uint) error
 	SwitchUserChannel(userID uint, newChannelID uint) (*models.UserChannel, error)
 	GetChannelMembers(channelID uint) ([]models.UserChannel, error)
 	GetUserCurrentChannel(userID uint) (*models.UserChannel, error)
@@ -25,4 +26,14 @@ type RoomRepositoryInterface interface {
 // UserRepositoryInterface defines the interface for user repository operations
 type UserRepositoryInterface interface {
 	GetByID(id uint) (*models.User, error)
+}
+
+// ChannelServiceInterface defines the interface for channel service operations
+type ChannelServiceInterface interface {
+	SwitchToChannel(userID uint, channelID uint) (*models.UserChannel, error)
+	GetChannelMembers(channelID uint) ([]models.UserChannel, error)
+	GetUserCurrentChannel(userID uint) (*models.UserChannel, error)
+	CreateTeamChannel(roomID uint, creatorID uint, channelName string) (*models.Channel, error)
+	DeleteTeamChannel(channelID uint, userID uint) error
+	GetRoomChannels(roomID uint) ([]models.Channel, error)
 }

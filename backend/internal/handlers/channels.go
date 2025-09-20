@@ -6,16 +6,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/livekit/meet/backend/internal/models"
-	"github.com/livekit/meet/backend/internal/services"
+	"github.com/livekit/meet/backend/internal/repositories/interfaces"
 )
 
 // ChannelHandler handles channel-related HTTP requests
 type ChannelHandler struct {
-	channelService *services.ChannelService
+	channelService interfaces.ChannelServiceInterface
 }
 
 // NewChannelHandler creates a new channel handler
-func NewChannelHandler(channelService *services.ChannelService) *ChannelHandler {
+func NewChannelHandler(channelService interfaces.ChannelServiceInterface) *ChannelHandler {
 	return &ChannelHandler{
 		channelService: channelService,
 	}
@@ -179,6 +179,70 @@ func (h *ChannelHandler) CreateTeamChannel(c *gin.Context) {
 		"message": "Team channel created successfully",
 		"channel": channel,
 	})
+}
+
+// DeleteTeamChannel deletes a team channel (admin only)
+// DELETE /api/channels/:channelId
+func (h *ChannelHandler) DeleteTeamChannel(c *gin.Context) {
+	// Get channel ID from URL parameter
+	channelIDStr := c.Param("channelId")
+	channelID, err := strconv.ParseUint(channelIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid channel ID",
+		})
+		return
+	}
+
+	// Get user from context (set by auth middleware)
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Authentication required",
+		})
+		return
+	}
+
+	userModel, ok := user.(*models.User)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Internal server error",
+		})
+		return
+	}
+
+	// Delete team channel
+	err = h.channelService.DeleteTeamChannel(uint(channelID), userModel.ID)
+	if err != nil {
+		if err.Error() == "unauthorized: only room creator can delete channels" {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "Only room creator can delete channels",
+			})
+			return
+		}
+
+		if err.Error() == "cannot delete main lobby channel" {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "Cannot delete main lobby channel",
+			})
+			return
+		}
+
+		if err.Error() == "channel not found" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Channel not found",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to delete team channel",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }
 
 // GetUserCurrentChannel gets the channel a user is currently connected to

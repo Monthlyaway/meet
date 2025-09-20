@@ -99,6 +99,40 @@ func (s *ChannelService) CreateTeamChannel(roomID uint, creatorID uint, channelN
 	return channel, nil
 }
 
+// DeleteTeamChannel deletes a team channel (admin only)
+func (s *ChannelService) DeleteTeamChannel(channelID uint, userID uint) error {
+	// 1. Get the channel to verify it exists and get room info
+	channel, err := s.roomRepo.GetChannelByID(channelID)
+	if err != nil {
+		return fmt.Errorf("channel not found")
+	}
+
+	// 2. Prevent deletion of main lobby channels
+	if channel.IsMainLobby {
+		return fmt.Errorf("cannot delete main lobby channel")
+	}
+
+	// 3. Validate that the user is the room creator
+	isOwner, err := s.roomRepo.IsRoomOwner(channel.RoomID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to check room ownership: %w", err)
+	}
+
+	if !isOwner {
+		return fmt.Errorf("unauthorized: only room creator can delete channels")
+	}
+
+	// 4. Delete the channel (user_channels will cascade delete)
+	if err := s.roomRepo.DeleteChannel(channelID); err != nil {
+		return fmt.Errorf("failed to delete channel: %w", err)
+	}
+
+	fmt.Printf("Team channel '%s' (ID: %d) deleted from room %d\n",
+		channel.Name, channelID, channel.RoomID)
+
+	return nil
+}
+
 // GetRoomChannels retrieves all channels for a room
 func (s *ChannelService) GetRoomChannels(roomID uint) ([]models.Channel, error) {
 	channels, err := s.roomRepo.GetRoomChannels(roomID)

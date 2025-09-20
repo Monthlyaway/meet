@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+import { useAuthContext } from '@/lib/auth/AuthContext';
+import { ChannelManager } from '@/lib/gaming/ChannelManager';
 import {
   formatChatMessageLinks,
   LocalUserChoices,
@@ -66,6 +68,7 @@ export function PageClientImpl(props: {
   roomId: string;
 }) {
   const router = useRouter();
+  const { user } = useAuthContext();
   const [roomData, setRoomData] = useState<RoomJoinResponse | null>(null);
   const [currentChannel, setCurrentChannel] = useState<Channel | null>(null);
   const [connectionToken, setConnectionToken] = useState<string | null>(null);
@@ -213,6 +216,36 @@ export function PageClientImpl(props: {
     }
   }, [preJoinChoices]);
 
+  const handleChannelCreated = useCallback((newChannel: Channel) => {
+    if (roomData) {
+      const updatedChannels = [...(roomData.room.channels || []), newChannel];
+      setRoomData({
+        ...roomData,
+        room: { ...roomData.room, channels: updatedChannels }
+      });
+    }
+  }, [roomData]);
+
+  const handleChannelDeleted = useCallback((deletedChannelId: number) => {
+    if (roomData) {
+      const updatedChannels = (roomData.room.channels || []).filter(c => c.id !== deletedChannelId);
+      setRoomData({
+        ...roomData,
+        room: { ...roomData.room, channels: updatedChannels }
+      });
+
+      // Switch to main lobby if current channel was deleted
+      if (currentChannel?.id === deletedChannelId) {
+        const mainLobby = updatedChannels.find(c => c.isMainLobby);
+        if (mainLobby) {
+          switchChannel(mainLobby);
+        }
+      }
+    }
+  }, [roomData, currentChannel, switchChannel]);
+
+  const isRoomAdmin = roomData && user && roomData.room.creatorId === user.id;
+
   if (loading) {
     return (
       <main data-lk-theme="default" style={{ height: '100%' }}>
@@ -266,6 +299,16 @@ export function PageClientImpl(props: {
             <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>
               {roomData.room.name}
             </h3>
+
+            {/* Channel Management for Admins */}
+            {isRoomAdmin && (
+              <ChannelManager
+                roomId={parseInt(props.roomId)}
+                channels={roomData.room.channels || []}
+                onChannelCreated={handleChannelCreated}
+                onChannelDeleted={handleChannelDeleted}
+              />
+            )}
 
             <div style={{ marginBottom: '1rem' }}>
               <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', opacity: 0.7 }}>

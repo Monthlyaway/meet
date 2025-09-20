@@ -29,6 +29,11 @@ func (m *MockRoomRepository) GetUserCurrentChannel(userID uint) (*models.UserCha
 	return args.Get(0).(*models.UserChannel), args.Error(1)
 }
 
+func (m *MockRoomRepository) DeleteChannel(channelID uint) error {
+	args := m.Called(channelID)
+	return args.Error(0)
+}
+
 func TestSwitchToChannel_Success(t *testing.T) {
 	// Arrange
 	mockRoomRepo := new(MockRoomRepository)
@@ -201,4 +206,123 @@ func TestGetUserCurrentChannel_Success(t *testing.T) {
 	assert.Equal(t, "Main Lobby", result.Channel.Name)
 
 	mockRoomRepo.AssertCalled(t, "GetUserCurrentChannel", userID)
+}
+
+func TestDeleteTeamChannel_Success(t *testing.T) {
+	// Arrange
+	mockRoomRepo := new(MockRoomRepository)
+	mockUserRepo := new(MockUserRepository)
+	service := NewChannelService(mockRoomRepo, mockUserRepo)
+
+	channelID := uint(1)
+	userID := uint(1)
+
+	testChannel := &models.Channel{
+		ID:          channelID,
+		Name:        "Team Alpha",
+		RoomID:      1,
+		IsMainLobby: false,
+	}
+
+	// Setup mocks
+	mockRoomRepo.On("GetChannelByID", channelID).Return(testChannel, nil)
+	mockRoomRepo.On("IsRoomOwner", testChannel.RoomID, userID).Return(true, nil)
+	mockRoomRepo.On("DeleteChannel", channelID).Return(nil)
+
+	// Act
+	err := service.DeleteTeamChannel(channelID, userID)
+
+	// Assert
+	assert.NoError(t, err)
+
+	mockRoomRepo.AssertCalled(t, "GetChannelByID", channelID)
+	mockRoomRepo.AssertCalled(t, "IsRoomOwner", testChannel.RoomID, userID)
+	mockRoomRepo.AssertCalled(t, "DeleteChannel", channelID)
+}
+
+func TestDeleteTeamChannel_MainLobbyProtection(t *testing.T) {
+	// Arrange
+	mockRoomRepo := new(MockRoomRepository)
+	mockUserRepo := new(MockUserRepository)
+	service := NewChannelService(mockRoomRepo, mockUserRepo)
+
+	channelID := uint(1)
+	userID := uint(1)
+
+	// Main lobby channel
+	testChannel := &models.Channel{
+		ID:          channelID,
+		Name:        "Main Lobby",
+		RoomID:      1,
+		IsMainLobby: true, // This is a main lobby
+	}
+
+	// Setup mocks
+	mockRoomRepo.On("GetChannelByID", channelID).Return(testChannel, nil)
+
+	// Act
+	err := service.DeleteTeamChannel(channelID, userID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "cannot delete main lobby channel")
+
+	// Verify no further operations were attempted
+	mockRoomRepo.AssertNotCalled(t, "IsRoomOwner", mock.Anything, mock.Anything)
+	mockRoomRepo.AssertNotCalled(t, "DeleteChannel", mock.Anything)
+}
+
+func TestDeleteTeamChannel_Unauthorized(t *testing.T) {
+	// Arrange
+	mockRoomRepo := new(MockRoomRepository)
+	mockUserRepo := new(MockUserRepository)
+	service := NewChannelService(mockRoomRepo, mockUserRepo)
+
+	channelID := uint(1)
+	userID := uint(2) // Different user, not the owner
+
+	testChannel := &models.Channel{
+		ID:          channelID,
+		Name:        "Team Alpha",
+		RoomID:      1,
+		IsMainLobby: false,
+	}
+
+	// Setup mocks
+	mockRoomRepo.On("GetChannelByID", channelID).Return(testChannel, nil)
+	mockRoomRepo.On("IsRoomOwner", testChannel.RoomID, userID).Return(false, nil) // User is not owner
+
+	// Act
+	err := service.DeleteTeamChannel(channelID, userID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unauthorized: only room creator can delete channels")
+
+	// Verify delete was not called
+	mockRoomRepo.AssertNotCalled(t, "DeleteChannel", mock.Anything)
+}
+
+func TestDeleteTeamChannel_ChannelNotFound(t *testing.T) {
+	// Arrange
+	mockRoomRepo := new(MockRoomRepository)
+	mockUserRepo := new(MockUserRepository)
+	service := NewChannelService(mockRoomRepo, mockUserRepo)
+
+	channelID := uint(999)
+	userID := uint(1)
+
+	// Setup mocks - channel not found
+	mockRoomRepo.On("GetChannelByID", channelID).Return((*models.Channel)(nil), assert.AnError)
+
+	// Act
+	err := service.DeleteTeamChannel(channelID, userID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "channel not found")
+
+	// Verify no further operations were attempted
+	mockRoomRepo.AssertNotCalled(t, "IsRoomOwner", mock.Anything, mock.Anything)
+	mockRoomRepo.AssertNotCalled(t, "DeleteChannel", mock.Anything)
 }

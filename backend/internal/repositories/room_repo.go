@@ -291,3 +291,12 @@ func (r *RoomRepository) GetChannelByID(channelID uint) (*models.Channel, error)
 	}
 	return &channel, nil
 }
+
+// DeleteChannel deletes a channel by its ID (user_channels cascade delete)
+func (r *RoomRepository) DeleteChannel(channelID uint) error {
+	err := r.db.Delete(&models.Channel{}, channelID).Error
+	if err != nil {
+		return fmt.Errorf("failed to delete channel: %w", err)
+	}
+	return nil
+}

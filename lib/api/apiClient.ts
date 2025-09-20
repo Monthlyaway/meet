@@ -113,6 +113,19 @@ class ApiClient {
   }> {
     return this.post('/api/rooms/join', { accessToken: accessToken });
   }
+
+  // Team channel creation
+  async createTeamChannel(roomId: number, channelData: { name: string }): Promise<{
+    message: string;
+    channel: any;
+  }> {
+    return this.post(`/api/rooms/${roomId}/channels`, channelData);
+  }
+
+  // Team channel deletion
+  async deleteTeamChannel(channelId: number): Promise<void> {
+    return this.delete(`/api/channels/${channelId}`);
+  }
 }
 
 // Export a singleton instance
