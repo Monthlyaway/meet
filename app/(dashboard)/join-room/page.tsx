@@ -78,9 +78,9 @@ export default function JoinRoomPage() {
         throw new Error('Main lobby channel not found');
       }
 
-      // Redirect to room with LiveKit room name
-      // The room page will handle calling /api/connection-details to get the LiveKit token
-      router.push(`/rooms/${mainLobbyChannel.livekit_room_name}?joined=true`);
+      // Redirect to gaming room interface with room ID
+      // The gaming room page will handle calling /api/connection-details to get the LiveKit token
+      router.push(`/gaming/rooms/${joinResponse.room.id}?joined=true`);
     } catch (error) {
       console.error('Room join error:', error);
 

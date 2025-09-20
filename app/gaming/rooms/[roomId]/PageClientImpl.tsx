@@ -35,6 +35,16 @@ interface Channel {
   createdAt: string;
 }
 
+// API Response types (snake_case from backend)
+interface APIChannel {
+  id: number;
+  name: string;
+  room_id: number;
+  is_main_lobby: boolean;
+  livekit_room_name: string;
+  created_at: string;
+}
+
 interface User {
   id: number;
   username: string;
@@ -72,6 +82,7 @@ export function PageClientImpl(props: {
   const [roomData, setRoomData] = useState<RoomJoinResponse | null>(null);
   const [currentChannel, setCurrentChannel] = useState<Channel | null>(null);
   const [connectionToken, setConnectionToken] = useState<string | null>(null);
+  const [serverUrl, setServerUrl] = useState<string | null>(null);
   const [preJoinChoices, setPreJoinChoices] = useState<LocalUserChoices | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,14 +127,24 @@ export function PageClientImpl(props: {
 
         const data = await response.json();
 
+        // Convert API response channels from snake_case to camelCase
+        const channels: Channel[] = data.room.channels?.map((apiCh: APIChannel) => ({
+          id: apiCh.id,
+          name: apiCh.name,
+          roomId: apiCh.room_id,
+          isMainLobby: apiCh.is_main_lobby,
+          livekitRoomName: apiCh.livekit_room_name,
+          createdAt: apiCh.created_at,
+        })) || [];
+
         // Find the main lobby channel
-        const mainLobby = data.room.channels?.find((ch: Channel) => ch.isMainLobby);
+        const mainLobby = channels.find((ch: Channel) => ch.isMainLobby);
         if (!mainLobby) {
           throw new Error('Main lobby channel not found');
         }
 
         const roomResponse: RoomJoinResponse = {
-          room: data.room,
+          room: { ...data.room, channels },
           mainLobbyChannel: mainLobby,
           livekitToken: mainLobby.livekitRoomName,
         };
@@ -162,7 +183,9 @@ export function PageClientImpl(props: {
       }
 
       const connectionDetailsData = await connectionDetailsResp.json();
-      setConnectionToken(connectionDetailsData.token);
+      console.log('Connection details received:', connectionDetailsData);
+      setConnectionToken(connectionDetailsData.participantToken);
+      setServerUrl(connectionDetailsData.serverUrl);
     } catch (err) {
       console.error('Failed to join room:', err);
       toast.error('Failed to join voice chat');
@@ -208,7 +231,8 @@ export function PageClientImpl(props: {
       const connectionDetailsData = await connectionDetailsResp.json();
 
       setCurrentChannel(channel);
-      setConnectionToken(connectionDetailsData.token);
+      setConnectionToken(connectionDetailsData.participantToken);
+      setServerUrl(connectionDetailsData.serverUrl);
       toast.success(`Switched to ${channel.name}`);
     } catch (err) {
       console.error('Failed to switch channel:', err);
@@ -353,6 +377,7 @@ export function PageClientImpl(props: {
           <div style={{ flex: 1 }}>
             <LiveKitRoomComponent
               connectionToken={connectionToken}
+              serverUrl={serverUrl}
               userChoices={preJoinChoices}
               roomName={currentChannel?.livekitRoomName || ''}
               channelName={currentChannel?.name || ''}
@@ -367,6 +392,7 @@ export function PageClientImpl(props: {
 function LiveKitRoomComponent(props: {
   userChoices: LocalUserChoices;
   connectionToken: string;
+  serverUrl: string | null;
   roomName: string;
   channelName: string;
 }) {
@@ -390,14 +416,20 @@ function LiveKitRoomComponent(props: {
   }, []);
 
   React.useEffect(() => {
-    if (props.connectionToken && room && room.state === 'disconnected') {
+    if (props.connectionToken && props.serverUrl && room && room.state === 'disconnected') {
       const connect = async () => {
         try {
-          // Use the LiveKit server from environment
-          const wsUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL || 'ws://localhost:7880';
-          await room.connect(wsUrl, props.connectionToken);
+          console.log('Attempting to connect to LiveKit:', {
+            serverUrl: props.serverUrl,
+            hasToken: !!props.connectionToken,
+            roomState: room.state,
+            roomName: props.roomName
+          });
+          await room.connect(props.serverUrl!, props.connectionToken);
+          console.log('Successfully connected to LiveKit room');
         } catch (error) {
           console.error('Failed to connect to LiveKit room:', error);
+          toast.error('Failed to connect to voice chat');
         }
       };
       connect();
@@ -408,7 +440,7 @@ function LiveKitRoomComponent(props: {
         room.disconnect();
       }
     };
-  }, [room, props.connectionToken]);
+  }, [room, props.connectionToken, props.serverUrl]);
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

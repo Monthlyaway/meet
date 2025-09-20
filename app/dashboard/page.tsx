@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/lib/auth/useAuth';
 import ProtectedRoute from '@/lib/auth/ProtectedRoute';
 import { useRouter } from 'next/navigation';
 import RoomCreator from '@/lib/gaming/RoomCreator';
 import RoomList from '@/lib/gaming/RoomList';
+import styles from '@/styles/Dashboard.module.css';
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -36,16 +37,16 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-900 text-white">
-        <header className="bg-gray-800 border-b border-gray-700">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <h1 className="text-2xl font-bold text-purple-400">Gaming Voice Chat</h1>
-              <div className="flex items-center space-x-4">
-                <span className="text-gray-300">Welcome, {user?.username}</span>
+      <div className={styles.dashboardContainer}>
+        <header className={styles.header}>
+          <div className={styles.headerContainer}>
+            <div className={styles.headerContent}>
+              <h1 className={styles.headerTitle}>Gaming Voice Chat</h1>
+              <div className={styles.headerActions}>
+                <span className={styles.welcomeText}>Welcome, {user?.username}</span>
                 <button
                   onClick={handleLogout}
-                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className={styles.logoutButton}
                 >
                   Logout
                 </button>
@@ -54,21 +55,25 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className={styles.main}>
           {/* Status Messages */}
-          {errorMessage && (
-            <div className="mb-6 bg-red-600 border border-red-500 rounded-lg p-4">
-              <p className="text-white">{errorMessage}</p>
+          {(errorMessage || successMessage) && (
+            <div className={styles.statusMessages}>
+              {errorMessage && (
+                <div className={styles.errorMessage}>
+                  <p className={styles.statusText}>{errorMessage}</p>
+                </div>
+              )}
+
+              {successMessage && (
+                <div className={styles.successMessage}>
+                  <p className={styles.statusText}>{successMessage}</p>
+                </div>
+              )}
             </div>
           )}
 
-          {successMessage && (
-            <div className="mb-6 bg-green-600 border border-green-500 rounded-lg p-4">
-              <p className="text-white">{successMessage}</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className={styles.mainGrid}>
             {/* Room Creation Section */}
             <div>
               <RoomCreator
@@ -78,25 +83,25 @@ export default function DashboardPage() {
             </div>
 
             {/* Join Room Section */}
-            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-              <h2 className="text-xl font-semibold mb-4 text-purple-400">Join Room</h2>
-              <p className="text-gray-300 mb-4">
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle}>Join Room</h2>
+              <p className={styles.cardDescription}>
                 Use an access token to join an existing gaming room.
               </p>
               <button
                 onClick={() => router.push('/join-room')}
-                className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition-colors"
+                className={styles.joinRoomButton}
               >
                 Join Room
               </button>
-              <p className="text-gray-500 text-sm mt-2">
+              <p className={styles.joinRoomHint}>
                 Enter your room access token to join
               </p>
             </div>
           </div>
 
           {/* Room List Section */}
-          <div className="mt-8">
+          <div className={styles.roomListSection}>
             <RoomList
               refreshTrigger={refreshTrigger}
               onError={handleError}
