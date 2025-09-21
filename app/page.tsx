@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useState } from 'react';
 import { encodePassphrase, generateRoomId, randomString } from '@/lib/client-utils';
+import { AdminIdentityManager } from '@/lib/room-storage';
 import styles from '../styles/Home.module.css';
 
 function Tabs(props: React.PropsWithChildren<{}>) {
@@ -45,18 +46,45 @@ function DemoMeetingTab(props: { label: string }) {
   const router = useRouter();
   const [e2ee, setE2ee] = useState(false);
   const [sharedPassphrase, setSharedPassphrase] = useState(randomString(64));
-  const startMeeting = () => {
-    if (e2ee) {
-      router.push(`/rooms/${generateRoomId()}#${encodePassphrase(sharedPassphrase)}`);
-    } else {
-      router.push(`/rooms/${generateRoomId()}`);
+  const startMeeting = async () => {
+    const roomId = generateRoomId();
+    const adminUserId = AdminIdentityManager.getUserId();
+
+    console.log('🏠 Home Page: Creating new room', { roomId, adminUserId, e2ee });
+
+    try {
+      const response = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId,
+          adminUserId,
+          displayName: 'Meeting Room'
+        })
+      });
+
+      const result = await response.json();
+      console.log('🏠 Home Page: Room creation API response', { status: response.status, result });
+
+      if (!response.ok) {
+        throw new Error(`Room creation failed: ${result.error}`);
+      }
+
+      const targetUrl = e2ee
+        ? `/rooms/${roomId}/channels/main-lobby#${encodePassphrase(sharedPassphrase)}`
+        : `/rooms/${roomId}/channels/main-lobby`;
+
+      console.log('🏠 Home Page: Redirecting to channel', { targetUrl, e2ee });
+      router.push(targetUrl);
+    } catch (error) {
+      console.error('🏠 Home Page: Failed to create room:', error);
     }
   };
   return (
     <div className={styles.tabContent}>
       <p style={{ margin: 0 }}>Try LiveKit Meet for free with our live demo project.</p>
       <button style={{ marginTop: '1rem' }} className="lk-button" onClick={startMeeting}>
-        Start Meeting
+        Create Room
       </button>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
