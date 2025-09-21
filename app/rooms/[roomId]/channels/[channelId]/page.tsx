@@ -2,6 +2,7 @@ import * as React from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { RoomFileStorage } from '@/lib/room-storage';
 import { PageClientImpl } from '../../../[roomName]/PageClientImpl';
+import { ChannelWrapper } from '@/lib/ChannelWrapper';
 import { isVideoCodec } from '@/lib/types';
 
 export default async function ChannelPage({
@@ -53,11 +54,17 @@ export default async function ChannelPage({
   });
 
   return (
-    <PageClientImpl
-      roomName={channel.livekitRoomName}
-      region={_searchParams.region}
-      hq={hq}
-      codec={codec}
-    />
+    <ChannelWrapper
+      roomId={roomId}
+      channel={channel}
+      initialChannels={channels}
+    >
+      <PageClientImpl
+        roomName={channel.livekitRoomName}
+        region={_searchParams.region}
+        hq={hq}
+        codec={codec}
+      />
+    </ChannelWrapper>
   );
 }

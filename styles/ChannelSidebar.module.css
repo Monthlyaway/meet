@@ -1,0 +1,257 @@
+.channelSidebar {
+  width: 280px;
+  height: 100vh;
+  background: var(--lk-bg2);
+  border-right: 1px solid var(--lk-border-color);
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--lk-border-color);
+  margin-bottom: 1rem;
+}
+
+.header h3 {
+  margin: 0;
+  color: var(--lk-fg);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.connectionStatus {
+  font-size: 0.75rem;
+  color: var(--lk-fg2);
+  margin-top: 0.25rem;
+  opacity: 0.7;
+}
+
+.errorStatus {
+  font-size: 0.75rem;
+  color: var(--lk-danger);
+  margin-top: 0.25rem;
+}
+
+.channelList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lk-fg2);
+  font-size: 0.9rem;
+  padding: 2rem;
+}
+
+.adminControls {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--lk-border-color);
+}
+
+/* Channel Button Styles */
+.channelButton {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--lk-fg);
+  text-align: left;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.channelButton:hover {
+  background: var(--lk-bg3);
+}
+
+.channelButton.active {
+  background: var(--lk-accent-bg);
+  color: var(--lk-accent-fg);
+}
+
+.channelButton.active:hover {
+  background: var(--lk-accent-bg);
+}
+
+.channelIcon {
+  margin-right: 0.75rem;
+  font-size: 1rem;
+  opacity: 0.7;
+}
+
+.channelName {
+  flex: 1;
+  font-weight: 500;
+}
+
+/* Create Channel Button Styles */
+.createChannelButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  border: 1px dashed var(--lk-border-color);
+  background: transparent;
+  color: var(--lk-fg2);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.createChannelButton:hover {
+  border-color: var(--lk-accent-bg);
+  color: var(--lk-accent-bg);
+  background: var(--lk-bg3);
+}
+
+.createChannelIcon {
+  margin-right: 0.5rem;
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--lk-bg2);
+  border: 1px solid var(--lk-border-color);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  width: 100%;
+  max-width: 400px;
+  margin: 1rem;
+}
+
+.modalHeader {
+  margin-bottom: 1.5rem;
+}
+
+.modalHeader h3 {
+  margin: 0 0 0.5rem 0;
+  color: var(--lk-fg);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.modalHeader p {
+  margin: 0;
+  color: var(--lk-fg2);
+  font-size: 0.9rem;
+}
+
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.formGroup label {
+  color: var(--lk-fg);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.formGroup input {
+  padding: 0.75rem;
+  border: 1px solid var(--lk-border-color);
+  border-radius: 0.5rem;
+  background: var(--lk-bg);
+  color: var(--lk-fg);
+  font-size: 0.9rem;
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: var(--lk-accent-bg);
+  box-shadow: 0 0 0 3px rgba(var(--lk-accent-bg-rgb), 0.1);
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.cancelButton {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--lk-border-color);
+  background: transparent;
+  color: var(--lk-fg);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.15s ease;
+}
+
+.cancelButton:hover {
+  background: var(--lk-bg3);
+}
+
+.submitButton {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: var(--lk-accent-bg);
+  color: var(--lk-accent-fg);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.submitButton:hover {
+  opacity: 0.9;
+}
+
+.submitButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.errorMessage {
+  color: var(--lk-danger);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .channelSidebar {
+    width: 100%;
+    height: auto;
+    max-height: 40vh;
+    border-right: none;
+    border-bottom: 1px solid var(--lk-border-color);
+  }
+}

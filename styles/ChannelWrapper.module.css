@@ -1,0 +1,56 @@
+.channelLayout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--lk-bg);
+}
+
+.sidebar {
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Ensure the video conference content fills the remaining space */
+.content > * {
+  flex: 1;
+  min-height: 0; /* Important for flexbox child to allow shrinking */
+}
+
+/* Mobile responsive layout */
+@media (max-width: 768px) {
+  .channelLayout {
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  .sidebar {
+    flex-shrink: 0;
+    order: 1;
+  }
+
+  .content {
+    flex: 1;
+    order: 2;
+    min-height: 0;
+  }
+}
+
+/* Tablet responsive layout */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .channelLayout {
+    flex-direction: row;
+  }
+
+  .sidebar {
+    width: 240px;
+  }
+}

@@ -675,8 +675,8 @@ export function useChannelUpdates(roomId: string, initialChannels: Channel[]) {
 **Technical Changes:**
 - Remove old routing structure entirely (clean break)
 - Implement new `/rooms/[roomId]/channels/[channelId]` routing
-- Create ChannelWrapper component with SSE-powered real-time updates
-- Reuse existing PageClientImpl without modification
+- Create ChannelWrapper component real-time updates
+- Reuse existing PageClientImpl with some modification
 - Add room/channel validation with proper redirects to main-lobby
 
 ---
