@@ -7,13 +7,20 @@ export async function GET(
 ) {
   try {
     const { roomId } = await params;
-    const metadata = await RoomMemoryStorage.getRoomMetadata(roomId);
+    let metadata = await RoomMemoryStorage.getRoomMetadata(roomId);
 
+    // If not found (likely on Vercel), create a temporary entry
     if (!metadata) {
-      return Response.json(
-        { error: 'Room not found' },
-        { status: 404 }
-      );
+      console.log('📡 Metadata API: Room not found, creating temporary entry', { roomId });
+      await RoomMemoryStorage.createRoom(roomId, 'temp-admin', 'Meeting Room');
+      metadata = await RoomMemoryStorage.getRoomMetadata(roomId);
+
+      if (!metadata) {
+        return Response.json(
+          { error: 'Failed to create temporary room' },
+          { status: 500 }
+        );
+      }
     }
 
     return Response.json(metadata);

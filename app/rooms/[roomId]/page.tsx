@@ -17,11 +17,12 @@ export default async function RoomRedirectPage({
 
   console.log('🔄 Room Redirect: Redirecting to main-lobby', { roomId, searchParams: _searchParams });
 
-  // Validate room exists
-  const metadata = await RoomMemoryStorage.getRoomMetadata(roomId);
+  // Try to get room metadata, create temporary if not found (for Vercel)
+  let metadata = await RoomMemoryStorage.getRoomMetadata(roomId);
   if (!metadata) {
-    console.error('🔄 Room Redirect: Room not found', { roomId });
-    redirect('/'); // Redirect to home page if room doesn't exist
+    console.log('🔄 Room Redirect: Room not found, creating temporary entry', { roomId });
+    await RoomMemoryStorage.createRoom(roomId, 'temp-admin', 'Meeting Room');
+    metadata = await RoomMemoryStorage.getRoomMetadata(roomId);
   }
 
   // Build redirect URL with query parameters

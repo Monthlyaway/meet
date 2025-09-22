@@ -21,10 +21,25 @@ export default async function ChannelPage({
 
   console.log('📺 Channel Page: Loading channel', { roomId, channelId, searchParams: _searchParams });
 
-  const metadata = await RoomMemoryStorage.getRoomMetadata(roomId);
+  // Try to get metadata from memory storage
+  let metadata = await RoomMemoryStorage.getRoomMetadata(roomId);
+
+  // If not found (likely on Vercel), create a temporary room entry
   if (!metadata) {
-    console.error('📺 Channel Page: Room not found', { roomId });
-    notFound();
+    console.log('📺 Channel Page: Room not found in memory, creating temporary entry', { roomId });
+
+    // Create a minimal room entry for Vercel
+    metadata = {
+      roomId,
+      adminUserId: 'temp-admin', // Temporary admin for Vercel
+      displayName: 'Meeting Room',
+      createdAt: new Date().toISOString(),
+      lastActivity: new Date().toISOString()
+    };
+
+    // Store it temporarily
+    await RoomMemoryStorage.createRoom(roomId, 'temp-admin', 'Meeting Room');
+    console.log('📺 Channel Page: Created temporary room entry', { roomId });
   }
 
   console.log('📺 Channel Page: Room metadata loaded', { metadata });
