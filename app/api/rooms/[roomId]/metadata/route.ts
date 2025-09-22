@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { RoomFileStorage } from '@/lib/room-storage';
+import { RoomFileStorage } from '@/lib/room-storage-server';
 
 export async function GET(
   request: NextRequest,

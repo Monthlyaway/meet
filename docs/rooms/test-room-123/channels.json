@@ -1,0 +1,19 @@
+{
+  "roomId": "test-room-123",
+  "channels": [
+    {
+      "channelId": "main-lobby",
+      "displayName": "Main Lobby",
+      "livekitRoomName": "test-room-123_main-lobby",
+      "createdAt": "2025-09-21T14:41:12.539Z",
+      "createdBy": "test-admin-456"
+    },
+    {
+      "channelId": "proc-0ykk",
+      "displayName": "Design Team",
+      "livekitRoomName": "test-room-123_proc-0ykk",
+      "createdAt": "2025-09-21T14:41:38.199Z",
+      "createdBy": "test-admin-456"
+    }
+  ]
+}

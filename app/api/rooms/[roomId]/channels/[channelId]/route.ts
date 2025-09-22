@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { RoomFileStorage } from '@/lib/room-storage';
+import { RoomFileStorage } from '@/lib/room-storage-server';
 import { promises as fs } from 'fs';
 import path from 'path';
 

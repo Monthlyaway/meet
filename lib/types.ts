@@ -26,3 +26,24 @@ export type ConnectionDetails = {
   participantName: string;
   participantToken: string;
 };
+
+export interface RoomMetadata {
+  roomId: string;
+  adminUserId: string;
+  displayName: string;
+  createdAt: string;
+  lastActivity: string;
+}
+
+export interface Channel {
+  channelId: string;
+  displayName: string;
+  livekitRoomName: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface ChannelRegistry {
+  roomId: string;
+  channels: Channel[];
+}

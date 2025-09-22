@@ -2,7 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { AdminIdentityManager, Channel } from './room-storage';
+import { AdminIdentityManager } from './admin-identity';
+import { Channel } from './types';
 import { CreateChannelButton } from './CreateChannelButton';
 import { ChannelButton } from './ChannelButton';
 import { useChannelUpdates } from './useChannelUpdates';

@@ -1,6 +1,6 @@
 'use client';
 
-import { Channel } from './room-storage';
+import { Channel } from './types';
 import styles from '../styles/ChannelSidebar.module.css';
 
 interface ChannelButtonProps {

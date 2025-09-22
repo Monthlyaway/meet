@@ -1,6 +1,6 @@
 'use client';
 
-import { Channel } from './room-storage';
+import { Channel } from './types';
 import { ChannelSidebar } from './ChannelSidebar';
 import styles from '../styles/ChannelWrapper.module.css';
 

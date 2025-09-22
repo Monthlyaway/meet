@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Channel } from './room-storage';
+import { Channel } from './types';
 
 interface ChannelUpdateEvent {
   type: 'CONNECTED' | 'CHANNELS_UPDATED' | 'ROOM_UPDATED' | 'KEEPALIVE' | 'ERROR';
