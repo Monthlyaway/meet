@@ -1,7 +1,5 @@
 import { NextRequest } from 'next/server';
-import { RoomFileStorage } from '@/lib/room-storage';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { RoomMemoryStorage } from '@/lib/room-storage-memory';
 
 export async function DELETE(
   request: NextRequest,
@@ -13,7 +11,7 @@ export async function DELETE(
     console.log('📡 Channel DELETE API: Request received', { roomId, channelId });
 
     // Validate room exists
-    const roomMetadata = await RoomFileStorage.getRoomMetadata(roomId);
+    const roomMetadata = await RoomMemoryStorage.getRoomMetadata(roomId);
     if (!roomMetadata) {
       return Response.json(
         { error: 'Room not found' },
@@ -22,7 +20,7 @@ export async function DELETE(
     }
 
     // Get current channels
-    const channels = await RoomFileStorage.getChannels(roomId);
+    const channels = await RoomMemoryStorage.getChannels(roomId);
     const channelToDelete = channels.find(c => c.channelId === channelId);
 
     if (!channelToDelete) {
@@ -40,7 +38,7 @@ export async function DELETE(
       );
     }
 
-    // Get requestor ID from query params or body
+    // Get requestor ID from query params
     const url = new URL(request.url);
     const requestorId = url.searchParams.get('requestorId');
 
@@ -59,31 +57,30 @@ export async function DELETE(
       );
     }
 
-    // Remove channel from list
-    const updatedChannels = channels.filter(c => c.channelId !== channelId);
+    // Delete channel from memory
+    const deleted = await RoomMemoryStorage.deleteChannel(roomId, channelId);
 
-    // Update channels file
-    const ROOMS_DIR = path.join(process.cwd(), 'docs', 'rooms');
-    const channelsPath = path.join(ROOMS_DIR, roomId, 'channels.json');
+    if (!deleted) {
+      return Response.json(
+        { error: 'Failed to delete channel' },
+        { status: 500 }
+      );
+    }
 
-    const channelRegistry = {
-      roomId,
-      channels: updatedChannels
-    };
-
-    await fs.writeFile(channelsPath, JSON.stringify(channelRegistry, null, 2));
+    // Get updated channel count
+    const remainingChannels = await RoomMemoryStorage.getChannels(roomId);
 
     console.log('📡 Channel DELETE API: Channel deleted successfully', {
       roomId,
       channelId,
       deletedChannel: channelToDelete.displayName,
-      remainingChannels: updatedChannels.length
+      remainingChannels: remainingChannels.length
     });
 
     return Response.json({
       success: true,
       deletedChannel: channelToDelete,
-      remainingChannels: updatedChannels.length
+      remainingChannels: remainingChannels.length
     });
 
   } catch (error) {

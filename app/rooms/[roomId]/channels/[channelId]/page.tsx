@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { notFound, redirect } from 'next/navigation';
-import { RoomFileStorage } from '@/lib/room-storage';
+import { RoomMemoryStorage } from '@/lib/room-storage-memory';
 import { PageClientImpl } from './PageClientImpl';
 import { ChannelWrapper } from '@/lib/ChannelWrapper';
 import { isVideoCodec } from '@/lib/types';
@@ -21,7 +21,7 @@ export default async function ChannelPage({
 
   console.log('📺 Channel Page: Loading channel', { roomId, channelId, searchParams: _searchParams });
 
-  const metadata = await RoomFileStorage.getRoomMetadata(roomId);
+  const metadata = await RoomMemoryStorage.getRoomMetadata(roomId);
   if (!metadata) {
     console.error('📺 Channel Page: Room not found', { roomId });
     notFound();
@@ -29,7 +29,7 @@ export default async function ChannelPage({
 
   console.log('📺 Channel Page: Room metadata loaded', { metadata });
 
-  const channels = await RoomFileStorage.getChannels(roomId);
+  const channels = await RoomMemoryStorage.getChannels(roomId);
   console.log('📺 Channel Page: Channels loaded', { channels });
 
   const channel = channels.find(c => c.channelId === channelId);

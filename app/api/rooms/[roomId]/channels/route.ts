@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { RoomFileStorage } from '@/lib/room-storage';
+import { RoomMemoryStorage } from '@/lib/room-storage-memory';
 
 export async function GET(
   request: NextRequest,
@@ -9,7 +9,7 @@ export async function GET(
     const { roomId } = await params;
     console.log('📡 Channels API: GET request', { roomId });
 
-    const channels = await RoomFileStorage.getChannels(roomId);
+    const channels = await RoomMemoryStorage.getChannels(roomId);
 
     console.log('📡 Channels API: Retrieved channels', { roomId, channelCount: channels.length });
 
@@ -53,7 +53,7 @@ export async function POST(
     }
 
     // Validate room exists
-    const roomMetadata = await RoomFileStorage.getRoomMetadata(roomId);
+    const roomMetadata = await RoomMemoryStorage.getRoomMetadata(roomId);
     if (!roomMetadata) {
       return Response.json(
         { error: 'Room not found' },
@@ -86,7 +86,7 @@ export async function POST(
     }
 
     // Check for duplicate names
-    const existingChannels = await RoomFileStorage.getChannels(roomId);
+    const existingChannels = await RoomMemoryStorage.getChannels(roomId);
     const duplicateChannel = existingChannels.find(
       channel => channel.displayName.toLowerCase() === trimmedName.toLowerCase()
     );
@@ -99,7 +99,7 @@ export async function POST(
     }
 
     // Create new channel
-    const newChannel = await RoomFileStorage.addChannel(roomId, trimmedName, creatorId);
+    const newChannel = await RoomMemoryStorage.addChannel(roomId, trimmedName, creatorId);
 
     console.log('📡 Channels API: Channel created successfully', {
       roomId,

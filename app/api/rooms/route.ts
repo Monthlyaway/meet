@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { RoomFileStorage } from '@/lib/room-storage';
+import { RoomMemoryStorage } from '@/lib/room-storage-memory';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const roomMetadata = await RoomFileStorage.createRoom(roomId, adminUserId, displayName);
+    const roomMetadata = await RoomMemoryStorage.createRoom(roomId, adminUserId, displayName);
     console.log('🔗 API /rooms POST: Room created successfully', { roomMetadata });
 
     return Response.json({

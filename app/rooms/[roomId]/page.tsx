@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { RoomFileStorage } from '@/lib/room-storage';
+import { RoomMemoryStorage } from '@/lib/room-storage-memory';
 
 export default async function RoomRedirectPage({
   params,
@@ -18,7 +18,7 @@ export default async function RoomRedirectPage({
   console.log('🔄 Room Redirect: Redirecting to main-lobby', { roomId, searchParams: _searchParams });
 
   // Validate room exists
-  const metadata = await RoomFileStorage.getRoomMetadata(roomId);
+  const metadata = await RoomMemoryStorage.getRoomMetadata(roomId);
   if (!metadata) {
     console.error('🔄 Room Redirect: Room not found', { roomId });
     redirect('/'); // Redirect to home page if room doesn't exist

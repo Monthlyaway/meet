@@ -3,14 +3,26 @@ import { RoomMetadata, Channel, ChannelRegistry } from './types';
 
 // In-memory storage for Vercel deployment
 // WARNING: Data will be lost when serverless functions restart
-const memoryStorage = new Map<string, {
+// Use global to persist across function invocations in same process
+declare global {
+  var __ROOM_MEMORY_STORAGE__: Map<string, {
+    metadata: RoomMetadata;
+    channels: Channel[];
+  }> | undefined;
+}
+
+const memoryStorage = global.__ROOM_MEMORY_STORAGE__ ?? new Map<string, {
   metadata: RoomMetadata;
   channels: Channel[];
 }>();
 
+// Always assign to global to persist across function calls
+global.__ROOM_MEMORY_STORAGE__ = memoryStorage;
+
 export class RoomMemoryStorage {
   static async createRoom(roomId: string, adminUserId: string, displayName: string): Promise<RoomMetadata> {
     console.log('🧠 RoomMemoryStorage: Creating room', { roomId, adminUserId, displayName });
+    console.log('🧠 RoomMemoryStorage: Current memory storage keys before create:', Array.from(memoryStorage.keys()));
 
     const metadata: RoomMetadata = {
       roomId,
@@ -35,11 +47,19 @@ export class RoomMemoryStorage {
     });
 
     console.log('🧠 RoomMemoryStorage: Room created successfully', { roomId });
+    console.log('🧠 RoomMemoryStorage: Current memory storage keys after create:', Array.from(memoryStorage.keys()));
+    console.log('🧠 RoomMemoryStorage: Memory storage size:', memoryStorage.size);
     return metadata;
   }
 
   static async getRoomMetadata(roomId: string): Promise<RoomMetadata | null> {
+    console.log('🧠 RoomMemoryStorage: Getting room metadata', { roomId });
+    console.log('🧠 RoomMemoryStorage: Current memory storage keys:', Array.from(memoryStorage.keys()));
+    console.log('🧠 RoomMemoryStorage: Memory storage size:', memoryStorage.size);
+
     const room = memoryStorage.get(roomId);
+    console.log('🧠 RoomMemoryStorage: Found room:', !!room);
+
     return room ? room.metadata : null;
   }
 
@@ -68,5 +88,22 @@ export class RoomMemoryStorage {
     memoryStorage.set(roomId, room);
 
     return newChannel;
+  }
+
+  static async deleteChannel(roomId: string, channelId: string): Promise<boolean> {
+    const room = memoryStorage.get(roomId);
+    if (!room) {
+      return false;
+    }
+
+    const initialLength = room.channels.length;
+    room.channels = room.channels.filter(c => c.channelId !== channelId);
+
+    if (room.channels.length < initialLength) {
+      memoryStorage.set(roomId, room);
+      return true;
+    }
+
+    return false;
   }
 }

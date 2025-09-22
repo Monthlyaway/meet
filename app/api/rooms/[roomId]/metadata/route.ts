@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { RoomFileStorage } from '@/lib/room-storage';
+import { RoomMemoryStorage } from '@/lib/room-storage-memory';
 
 export async function GET(
   request: NextRequest,
@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { roomId } = await params;
-    const metadata = await RoomFileStorage.getRoomMetadata(roomId);
+    const metadata = await RoomMemoryStorage.getRoomMetadata(roomId);
 
     if (!metadata) {
       return Response.json(
@@ -34,7 +34,7 @@ export async function POST(
     const { roomId } = await params;
     const body = await request.json();
 
-    const existingMetadata = await RoomFileStorage.getRoomMetadata(roomId);
+    const existingMetadata = await RoomMemoryStorage.getRoomMetadata(roomId);
     if (!existingMetadata) {
       return Response.json(
         { error: 'Room not found' },

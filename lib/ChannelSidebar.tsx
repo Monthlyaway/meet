@@ -19,7 +19,7 @@ export function ChannelSidebar({ roomId, currentChannelId, initialChannels }: Ch
   console.log('🎯 ChannelSidebar: Rendering sidebar', { roomId, currentChannelId, channelCount: initialChannels.length });
 
   const router = useRouter();
-  const { channels, isConnected, error } = useChannelUpdates(roomId, initialChannels);
+  const { channels, isConnected, error, refetch } = useChannelUpdates(roomId, initialChannels);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -56,7 +56,8 @@ export function ChannelSidebar({ roomId, currentChannelId, initialChannels }: Ch
       if (response.ok) {
         const result = await response.json();
         console.log('🎯 ChannelSidebar: Channel created successfully', result);
-        // Real-time updates via SSE will handle the UI refresh automatically
+        // Manually refresh channels since we don't have real-time updates
+        await refetch();
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('🎯 ChannelSidebar: Failed to create channel', {
