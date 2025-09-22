@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { RoomFileStorage } from '@/lib/room-storage-server';
+import { RoomFileStorage } from '@/lib/room-storage';
 
 export default async function RoomRedirectPage({
   params,

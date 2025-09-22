@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { notFound, redirect } from 'next/navigation';
-import { RoomFileStorage } from '@/lib/room-storage-server';
+import { RoomFileStorage } from '@/lib/room-storage';
 import { PageClientImpl } from './PageClientImpl';
 import { ChannelWrapper } from '@/lib/ChannelWrapper';
 import { isVideoCodec } from '@/lib/types';
