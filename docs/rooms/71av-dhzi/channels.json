@@ -1,0 +1,19 @@
+{
+  "roomId": "71av-dhzi",
+  "channels": [
+    {
+      "channelId": "main-lobby",
+      "displayName": "Main Lobby",
+      "livekitRoomName": "71av-dhzi_main-lobby",
+      "createdAt": "2025-09-22T03:19:53.885Z",
+      "createdBy": "e15u-00vm"
+    },
+    {
+      "channelId": "x29y-58i6",
+      "displayName": "Team 1",
+      "livekitRoomName": "71av-dhzi_x29y-58i6",
+      "createdAt": "2025-09-22T03:20:18.941Z",
+      "createdBy": "e15u-00vm"
+    }
+  ]
+}
